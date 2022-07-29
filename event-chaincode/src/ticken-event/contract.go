@@ -27,10 +27,19 @@ func (c *Contract) InitSamples(ctx TransactionContextInterface) error {
 	return nil
 }
 
+func (c *Contract) Get(ctx TransactionContextInterface, eventID string) (*Event, error) {
+	event, err := ctx.GetEventList().GetEvent(eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
+}
+
 func (c *Contract) Create(ctx TransactionContextInterface, eventID string, name string, date string) (*Event, error) {
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
-		panic(fmt.Errorf("error parsing date %s", err.Error()))
+		return nil, fmt.Errorf("error parsing date %s", err.Error())
 	}
 
 	newEvent := NewEvent(eventID, name, parsedDate)

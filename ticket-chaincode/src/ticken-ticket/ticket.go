@@ -8,19 +8,21 @@ import (
 
 // ********************** Ticket ************************ //
 
-type Status uint
+type Status string
 
 const (
-	ISSUED Status = iota + 1
-	SIGNED
-	SCANNED
+	ISSUED  Status = "Issued"
+	SIGNED  Status = "Signed"
+	SCANNED Status = "Scanned"
 )
 
 type Ticket struct {
-	TicketID string `json:"ticket_id"`
-	EventID  string `json:"event_id"`
-	Owner    string `json:"owner"`
-	Status   Status `json:"status"`
+	TicketID   string `json:"ticket_id"`
+	EventID    string `json:"event_id"`
+	Owner      string `json:"owner"`
+	Status     Status `json:"status"`
+	Section    string `json:"section"`
+	Subsection string `json:"subsection"`
 }
 
 func CreateTicketKey(eventID string, ticketID string) string {
@@ -35,16 +37,6 @@ func Deserialize(jsonBytes []byte, ticket *Ticket) error {
 	}
 
 	return nil
-}
-
-func (status Status) String() string {
-	statusNames := []string{"ISSUED", "SIGNED", "SCANNED"}
-
-	if status < ISSUED || status > SIGNED {
-		return "UNKNOWN"
-	}
-
-	return statusNames[status-1]
 }
 
 // ****************************************************** //
