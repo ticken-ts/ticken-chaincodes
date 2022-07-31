@@ -16,7 +16,7 @@ type List struct {
 	stateList ledgerapi.StateListInterface
 }
 
-func newList(ctx TransactionContextInterface) *List {
+func newTicketList(ctx TransactionContextInterface) *List {
 	stateList := new(ledgerapi.StateList)
 
 	stateList.Ctx = ctx
