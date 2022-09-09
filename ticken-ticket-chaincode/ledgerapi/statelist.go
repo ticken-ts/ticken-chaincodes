@@ -2,32 +2,38 @@ package ledgerapi
 
 import (
 	"fmt"
-	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 )
 
-// StateList useful for managing putting data in and out
-// of the ledger. Implementation of StateListInterface
-type StateList struct {
-	Ctx         contractapi.TransactionContextInterface
+type stateList struct {
+	Stub        shim.ChaincodeStubInterface
 	Name        string
 	Deserialize func([]byte, State) error
 }
 
-func (sl *StateList) AddState(state State) error {
+func NewStateList(stub shim.ChaincodeStubInterface, name string, deserializeFunc func([]byte, State) error) *stateList {
+	return &stateList{
+		Stub:        stub,
+		Name:        name,
+		Deserialize: deserializeFunc,
+	}
+}
+
+func (sl *stateList) AddState(state State) error {
 	splitKey := SplitKey(state.GetKey())
-	key, _ := sl.Ctx.GetStub().CreateCompositeKey(sl.Name, splitKey)
+	key, _ := sl.Stub.CreateCompositeKey(sl.Name, splitKey)
 	data, err := state.Serialize()
 
 	if err != nil {
 		return err
 	}
 
-	return sl.Ctx.GetStub().PutState(key, data)
+	return sl.Stub.PutState(key, data)
 }
 
-func (sl *StateList) GetState(key string, state State) error {
-	ledgerKey, _ := sl.Ctx.GetStub().CreateCompositeKey(sl.Name, SplitKey(key))
-	data, err := sl.Ctx.GetStub().GetState(ledgerKey)
+func (sl *stateList) GetState(key string, state State) error {
+	ledgerKey, _ := sl.Stub.CreateCompositeKey(sl.Name, SplitKey(key))
+	data, err := sl.Stub.GetState(ledgerKey)
 
 	if err != nil {
 		return err
@@ -40,6 +46,6 @@ func (sl *StateList) GetState(key string, state State) error {
 	return sl.Deserialize(data, state)
 }
 
-func (sl *StateList) UpdateState(state State) error {
+func (sl *stateList) UpdateState(state State) error {
 	return sl.AddState(state)
 }

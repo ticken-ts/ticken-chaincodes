@@ -1,8 +1,18 @@
 package tickenticket
 
-type ListInterface interface {
+import (
+	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"ticken-ticket-contract/ccinvokers"
+)
+
+type TicketList interface {
 	AddTicket(ticket *Ticket) error
 	UpdateTicket(ticket *Ticket) error
-	CountTicketsInSection(eventID string, section string) (int, error)
 	GetTicket(eventID string, ticketID string) (*Ticket, error)
+}
+
+type TickenTxContext interface {
+	contractapi.TransactionContextInterface
+	GetTicketList() TicketList
+	GetTickenEventInvoker() ccinvokers.TickenEventInvoker
 }

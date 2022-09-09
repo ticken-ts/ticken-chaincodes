@@ -17,7 +17,7 @@ type Event struct {
 	Active   bool           `json:"active"`
 }
 
-func (e *Event) GetSectionCapacity(sectionName string) (int, error) {
+func (e *Event) getSectionCapacity(sectionName string) (int, error) {
 	normalizedSectionName := strings.ToUpper(sectionName)
 
 	if capacity, ok := e.Sections[normalizedSectionName]; ok {
@@ -27,7 +27,7 @@ func (e *Event) GetSectionCapacity(sectionName string) (int, error) {
 	return -1, fmt.Errorf("section %s not found", normalizedSectionName)
 }
 
-func (e *Event) TicketSellIsOpen(solicitationTimestamp *timestamp.Timestamp) bool {
+func (e *Event) ticketSellIsOpen(solicitationTimestamp *timestamp.Timestamp) bool {
 	if !e.Active {
 		return false
 	}

@@ -1,23 +1,21 @@
 package tickenticket
 
-import "ticken-ticket-contract/ledgerapi"
+import (
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"ticken-ticket-contract/ledgerapi"
+)
 
 type ticketList struct {
 	stateList ledgerapi.StateListInterface
 }
 
-func NewTicketList(ctx TransactionContextInterface) *ticketList {
-	stateList := new(ledgerapi.StateList)
-
-	stateList.Ctx = ctx
-	stateList.Name = "ticken.ticken-event.ticketList"
-
-	stateList.Deserialize = func(bytes []byte, state ledgerapi.State) error {
+func NewTicketList(stub shim.ChaincodeStubInterface) *ticketList {
+	deserializeFunction := func(bytes []byte, state ledgerapi.State) error {
 		return TicketDeserialize(bytes, state.(*Ticket))
 	}
 
 	list := new(ticketList)
-	list.stateList = stateList
+	list.stateList = ledgerapi.NewStateList(stub, "ticken.ticket.list", deserializeFunction)
 
 	return list
 }

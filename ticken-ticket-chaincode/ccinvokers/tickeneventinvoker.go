@@ -36,3 +36,11 @@ func (i *tickenEventInvoker) GetEvent(eventID string) (*Event, error) {
 
 	return event, nil
 }
+
+func (i *tickenEventInvoker) IsAvailable(eventID string, section string) (bool, error) {
+	return true, nil
+}
+
+func (i *tickenEventInvoker) AddTicket(eventID string, section string) error {
+	return nil
+}
