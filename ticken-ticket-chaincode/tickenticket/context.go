@@ -1,8 +1,9 @@
-package ticken_ticket
+package tickenticket
 
 import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	ticken_event_cc "ticken-ticket-contract/cc-invokers/ticken-event-cc"
+	"ticken-ticket-contract/ccinvokers"
+	"ticken-ticket-contract/ccinvokers/tickenevent"
 )
 
 // TransactionContextInterface an interface to
@@ -12,31 +13,33 @@ import (
 type TransactionContextInterface interface {
 	contractapi.TransactionContextInterface
 	GetTicketList() ListInterface
-	GetTickenEventCCInvoker() ticken_event_cc.TickenEventCCInvoker
+	GetTickenEventCCInvoker() ccinvokers.TickenEventInvoker
 }
 
 // TransactionContext implementation of
 // TransactionContextInterface for use with
 // commercial paper contract
-type TransactionContext struct {
+type transactionContext struct {
 	contractapi.TransactionContext
 	ticketList           ListInterface
-	tickenEventCCInvoker ticken_event_cc.TickenEventCCInvoker
+	tickenEventCCInvoker ccinvokers.TickenEventInvoker
 }
 
-// GetTicketList return ticken-event List
-func (ctx *TransactionContext) GetTicketList() ListInterface {
-	if ctx.ticketList == nil {
-		ctx.ticketList = newTicketList(ctx)
-	}
+func NewTransactionContext() *transactionContext {
+	return new(transactionContext)
+}
 
+// GetTicketList return ticken-event ticketList
+func (ctx *transactionContext) GetTicketList() ListInterface {
+	if ctx.ticketList == nil {
+		ctx.ticketList = NewTicketList(ctx)
+	}
 	return ctx.ticketList
 }
 
-func (ctx *TransactionContext) GetTickenEventCCInvoker() ticken_event_cc.TickenEventCCInvoker {
+func (ctx *transactionContext) GetTickenEventCCInvoker() ccinvokers.TickenEventInvoker {
 	if ctx.tickenEventCCInvoker == nil {
-		ctx.tickenEventCCInvoker = ticken_event_cc.NewTickenEventCCInvoker(ctx)
+		ctx.tickenEventCCInvoker = tickenevent.NewInvoker(ctx.GetStub())
 	}
-
 	return ctx.tickenEventCCInvoker
 }

@@ -2,15 +2,15 @@ package main
 
 import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"ticken-ticket-contract/ticken-ticket"
+	"ticken-ticket-contract/tickenticket"
 )
 
 func main() {
 	// add metadata and init transaction context
-	tickenTicketContract := new(ticken_ticket.Contract)
+	tickenTicketContract := new(tickenticket.Contract)
 	tickenTicketContract.Info.Version = "0.0.1"
-	tickenTicketContract.Name = "ticken-ticket-contract"
-	tickenTicketContract.TransactionContextHandler = new(ticken_ticket.TransactionContext)
+	tickenTicketContract.Name = "tickenticket-contract"
+	tickenTicketContract.TransactionContextHandler = tickenticket.NewTransactionContext()
 
 	cc, err := contractapi.NewChaincode(tickenTicketContract)
 	if err != nil {
