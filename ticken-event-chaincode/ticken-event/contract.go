@@ -65,3 +65,15 @@ func (c *Contract) AddSection(ctx TransactionContext, eventID string, name strin
 
 	return event, nil
 }
+
+func (c *Contract) EventExists(ctx TransactionContext, eventID string) (bool, error) {
+	return true, nil
+}
+
+func (c *Contract) IsAvailable(ctx TransactionContext, eventID string, section string) (bool, error) {
+	return true, nil
+}
+
+func (c *Contract) AddTicket(ctx TransactionContext, eventID string, section string) error {
+	return nil
+}
