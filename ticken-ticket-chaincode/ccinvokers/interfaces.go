@@ -5,7 +5,6 @@ type BaseInvoker interface {
 }
 
 type TickenEventInvoker interface {
-	GetEvent(eventID string) (*Event, error)
 	IsAvailable(eventID string, section string) (bool, error)
 	AddTicket(eventID string, section string) error
 }
