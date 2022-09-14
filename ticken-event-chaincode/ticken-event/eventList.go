@@ -22,7 +22,7 @@ type eventList struct {
 
 // ******************** Primitives ********************** //
 
-func NewEventList(ctx TransactionContextInterface) *eventList {
+func NewEventList(ctx TransactionContext) EventListInterface {
 	stateList := new(ledgerapi.StateList)
 
 	stateList.Ctx = ctx

@@ -10,7 +10,7 @@ func main() {
 	tickenEventContract := new(ticken_event.Contract)
 	tickenEventContract.Info.Version = "0.0.1"
 	tickenEventContract.Name = "ticken-event-contract"
-	tickenEventContract.TransactionContextHandler = new(ticken_event.TransactionContext)
+	tickenEventContract.TransactionContextHandler = ticken_event.NewTransactionContext()
 
 	cc, err := contractapi.NewChaincode(tickenEventContract)
 	if err != nil {

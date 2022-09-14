@@ -4,25 +4,33 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
-// TransactionContextInterface an interface to
+// TransactionContext an interface to
 // describe the minimum required functions for
 // a transaction context in the commercial
 // paper
-type TransactionContextInterface interface {
+type TransactionContext interface {
 	contractapi.TransactionContextInterface
 	GetEventList() EventListInterface
 }
 
-// TransactionContext implementation of
-// TransactionContextInterface for use with
+type SettableTransactionContext interface {
+	contractapi.SettableTransactionContextInterface
+}
+
+// transactionContext implementation of
+// TransactionContext for use with
 // commercial paper contract
-type TransactionContext struct {
+type transactionContext struct {
 	contractapi.TransactionContext
-	eventList *eventList
+	eventList EventListInterface
+}
+
+func NewTransactionContext() SettableTransactionContext {
+	return new(transactionContext)
 }
 
 // GetEventList return ticken-event List
-func (ctx *TransactionContext) GetEventList() EventListInterface {
+func (ctx *transactionContext) GetEventList() EventListInterface {
 	if ctx.eventList == nil {
 		ctx.eventList = NewEventList(ctx)
 	}

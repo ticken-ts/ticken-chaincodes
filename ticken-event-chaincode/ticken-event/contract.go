@@ -10,7 +10,7 @@ type Contract struct {
 	contractapi.Contract
 }
 
-func (c *Contract) InitSamples(ctx TransactionContextInterface) error {
+func (c *Contract) InitSamples(ctx TransactionContext) error {
 	events := [3]*Event{}
 	events[0] = NewEvent("62dc7486b6faaccaf51089d9", "Event 1", time.Now().AddDate(0, 0, 20))
 	events[1] = NewEvent("62dc75325721c6ec1dda26e6", "Event 2", time.Now().AddDate(0, 0, 20))
@@ -27,7 +27,7 @@ func (c *Contract) InitSamples(ctx TransactionContextInterface) error {
 	return nil
 }
 
-func (c *Contract) Get(ctx TransactionContextInterface, eventID string) (*Event, error) {
+func (c *Contract) Get(ctx TransactionContext, eventID string) (*Event, error) {
 	event, err := ctx.GetEventList().GetEvent(eventID)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (c *Contract) Get(ctx TransactionContextInterface, eventID string) (*Event,
 	return event, nil
 }
 
-func (c *Contract) Create(ctx TransactionContextInterface, eventID string, name string, date string) (*Event, error) {
+func (c *Contract) Create(ctx TransactionContext, eventID string, name string, date string) (*Event, error) {
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing date %s", err.Error())
@@ -52,7 +52,7 @@ func (c *Contract) Create(ctx TransactionContextInterface, eventID string, name 
 	return newEvent, nil
 }
 
-func (c *Contract) AddSection(ctx TransactionContextInterface, eventID string, name string, totalTickets int) (*Event, error) {
+func (c *Contract) AddSection(ctx TransactionContext, eventID string, name string, totalTickets int) (*Event, error) {
 	event, err := ctx.GetEventList().GetEvent(eventID)
 	if err != nil {
 		return nil, err
