@@ -76,7 +76,11 @@ func (c *Contract) EventExists(ctx TransactionContext, eventID string) (bool, er
 }
 
 func (c *Contract) IsAvailable(ctx TransactionContext, eventID string, section string) (bool, error) {
-	return true, nil
+	event, err := ctx.GetEventList().GetEvent(eventID)
+	if err != nil {
+		return false, err
+	}
+	return event.IsAvailable(section), nil
 }
 
 func (c *Contract) AddTicket(ctx TransactionContext, eventID string, section string) error {
