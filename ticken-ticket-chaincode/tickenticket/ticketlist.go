@@ -6,7 +6,7 @@ import (
 )
 
 type ticketList struct {
-	stateList ledgerapi.StateListInterface
+	stateList ledgerapi.StateList
 }
 
 func NewTicketList(stub shim.ChaincodeStubInterface) *ticketList {
