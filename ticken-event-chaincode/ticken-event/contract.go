@@ -63,6 +63,10 @@ func (c *Contract) AddSection(ctx TransactionContext, eventID string, name strin
 		return nil, err
 	}
 
+	if err = ctx.GetEventList().UpdateEvent(event); err != nil {
+		return nil, err
+	}
+
 	return event, nil
 }
 
