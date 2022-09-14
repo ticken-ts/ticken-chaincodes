@@ -88,5 +88,23 @@ func (c *Contract) IsAvailable(ctx TransactionContext, eventID string, section s
 }
 
 func (c *Contract) AddTicket(ctx TransactionContext, eventID string, section string) error {
+	event, err := ctx.GetEventList().GetEvent(eventID)
+
+	if err != nil {
+		return err
+	}
+
+	err = event.AddTicket(section)
+
+	if err != nil {
+		return err
+	}
+
+	err = ctx.GetEventList().UpdateEvent(event)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

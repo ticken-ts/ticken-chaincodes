@@ -59,7 +59,7 @@ func (event *Event) AddSection(name string, totalTickets int) (*Section, error) 
 		return nil, fmt.Errorf("section with name %s already exists", name)
 	}
 
-	newSection := Section{Name: name, TotalTickets: totalTickets}
+	newSection := Section{Name: name, TotalTickets: totalTickets, RemainingTickets: totalTickets}
 	event.sections[name] = newSection
 	return &newSection, nil
 }
@@ -71,6 +71,22 @@ func (event *Event) HasSection(name string) bool {
 
 func (event *Event) IsAvailable(section string) bool {
 	return event.sections[section].RemainingTickets > 0
+}
+
+func (event *Event) AddTicket(section string) error {
+	savedSection, ok := event.sections[section]
+
+	if !ok {
+		return fmt.Errorf("section does not exist")
+	}
+
+	if savedSection.RemainingTickets > 0 {
+		savedSection.RemainingTickets -= 1
+	} else {
+		return fmt.Errorf("no tickets left in that section")
+	}
+
+	return nil
 }
 
 // The following implementations are required
