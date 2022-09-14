@@ -1,7 +1,6 @@
 package ticken_event
 
 import (
-	"container/list"
 	"encoding/json"
 	"fmt"
 	ledgerapi "ticken-ticket-contract/ledger-api"
@@ -69,10 +68,9 @@ func (event *Event) HasSection(name string) bool {
 	_, ok := event.sections[name]
 	return ok
 }
-			return true
-		}
-	}
-	return false
+
+func (event *Event) IsAvailable(section string) bool {
+	return event.sections[section].RemainingTickets > 0
 }
 
 // The following implementations are required
