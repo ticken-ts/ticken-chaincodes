@@ -20,13 +20,21 @@ func (c *Contract) Issue(ctx TickenTxContext, payload *ticketPayload) (*Ticket, 
 	eventID, ticketID, section, owner := payload.Deconstruct()
 
 	ticketWithSameKey, err := ticketList.GetTicket(eventID, ticketID)
-	if ticketWithSameKey != nil {
-		return nil, fmt.Errorf("ticket %s already exists for event %s", ticketID, eventID)
+	if ticketWithSameKey != nil || err != nil {
+		if err != nil {
+			return nil, err
+		} else {
+			return nil, fmt.Errorf("ticket %s already exists for event %s", ticketID, eventID)
+		}
 	}
 
-	_, err = tickenEventInvoker.GetEvent(eventID)
-	if err != nil {
-		return nil, err
+	eventExists, err := tickenEventInvoker.EventExists(eventID)
+	if !eventExists || err != nil {
+		if err != nil {
+			return nil, err
+		} else {
+			return nil, fmt.Errorf("eventID %s doesn't exists", eventID)
+		}
 	}
 
 	isAvailable, err := tickenEventInvoker.IsAvailable(eventID, section)

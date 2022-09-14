@@ -18,6 +18,10 @@ func NewTickenEventInvoker(stub shim.ChaincodeStubInterface) *tickenEventInvoker
 	}
 }
 
+func (i *tickenEventInvoker) EventExists(eventID string) (bool, error) {
+	return true, nil
+}
+
 func (i *tickenEventInvoker) IsAvailable(eventID string, section string) (bool, error) {
 	return true, nil
 }
