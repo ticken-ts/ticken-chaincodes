@@ -11,15 +11,16 @@ import (
 // *********************** Event ************************ //
 
 type Section struct {
-	Name         string `json:"name"`
-	TotalTickets int    `json:"total_tickets"`
+	Name             string `json:"name"`
+	TotalTickets     int    `json:"total_tickets"`
+	RemainingTickets int    `json:"remaining_tickets"`
 }
 
 type Event struct {
-	EventID  string    `json:"event_id"`
-	Name     string    `json:"name"`
-	date     time.Time `json:"date"`
-	sections list.List `json:"sections"`
+	EventID  string             `json:"event_id"`
+	Name     string             `json:"name"`
+	date     time.Time          `json:"date"`
+	sections map[string]Section `json:"sections"`
 }
 
 func CreateEventKey(eventID string) string {
@@ -46,7 +47,6 @@ func NewEvent(eventID string, name string, date time.Time) *Event {
 	event.Name = name
 	event.EventID = eventID
 	event.date = date
-	event.sections.Init()
 
 	return event
 }
@@ -61,14 +61,14 @@ func (event *Event) AddSection(name string, totalTickets int) (*Section, error) 
 	}
 
 	newSection := Section{Name: name, TotalTickets: totalTickets}
-	event.sections.PushBack(newSection)
+	event.sections[name] = newSection
 	return &newSection, nil
 }
 
 func (event *Event) HasSection(name string) bool {
-	for s := event.sections.Front(); s != nil; s = s.Next() {
-		section := s.Value.(*Section)
-		if section.Name == name {
+	_, ok := event.sections[name]
+	return ok
+}
 			return true
 		}
 	}
