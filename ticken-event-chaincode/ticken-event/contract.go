@@ -67,7 +67,12 @@ func (c *Contract) AddSection(ctx TransactionContext, eventID string, name strin
 }
 
 func (c *Contract) EventExists(ctx TransactionContext, eventID string) (bool, error) {
-	return true, nil
+	_, err := ctx.GetEventList().GetEvent(eventID)
+	if err != nil {
+		return false, nil
+	} else {
+		return true, nil
+	}
 }
 
 func (c *Contract) IsAvailable(ctx TransactionContext, eventID string, section string) (bool, error) {
