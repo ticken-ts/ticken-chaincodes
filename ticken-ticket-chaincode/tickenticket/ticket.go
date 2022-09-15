@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	ledgerapi "ticken-ticket-contract/ledgerapi"
+	"ticken-ticket-contract/ledgerapi"
 )
-
-// ********************** Ticket ************************ //
 
 type Status string
 
@@ -40,20 +37,23 @@ func TicketDeserialize(jsonBytes []byte, ticket *Ticket) error {
 	return nil
 }
 
-// ****************************************************** //
-
 // ******************** Primitives ********************** //
 
-func NewTicket(ticketID string, eventID string, section string, owner string) *Ticket {
+func NewTicket(ticketID string, eventID string, section string, owner string) (*Ticket, error) {
 	ticket := new(Ticket)
 
 	ticket.Status = ISSUED
-	ticket.Owner = owner
-	ticket.Section = strings.ToUpper(section)
-	ticket.EventID = eventID
-	ticket.TicketID = ticketID
 
-	return ticket
+	ticket.Owner = strings.TrimSpace(owner)
+	ticket.EventID = strings.TrimSpace(eventID)
+	ticket.TicketID = strings.TrimSpace(ticketID)
+	ticket.Section = strings.ToUpper(strings.TrimSpace(section))
+
+	if err := ticket.validate(); err != nil {
+		return nil, err
+	}
+
+	return ticket, nil
 }
 
 // The following implementations are required
@@ -68,3 +68,25 @@ func (ticket *Ticket) Serialize() ([]byte, error) {
 }
 
 // ****************************************************** //
+
+func (ticket *Ticket) validate() error {
+	// TODO -> check if necessary to validate  uuid format for ID's
+
+	if len(ticket.Owner) == 0 {
+		return fmt.Errorf("owner is mandatory")
+	}
+
+	if len(ticket.TicketID) == 0 {
+		return fmt.Errorf("ticketID is mandatory")
+	}
+
+	if len(ticket.EventID) == 0 {
+		return fmt.Errorf("eventID is mandatory")
+	}
+
+	if len(ticket.Section) == 0 {
+		return fmt.Errorf("section is mandatory")
+	}
+
+	return nil
+}

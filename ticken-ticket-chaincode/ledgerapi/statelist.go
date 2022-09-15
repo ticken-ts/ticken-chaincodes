@@ -46,6 +46,17 @@ func (sl *stateList) GetState(key string, state State) error {
 	return sl.Deserialize(data, state)
 }
 
+func (sl *stateList) StateExists(key string) (bool, error) {
+	ledgerKey, _ := sl.Stub.CreateCompositeKey(sl.Name, SplitKey(key))
+	data, err := sl.Stub.GetState(ledgerKey)
+
+	if err != nil {
+		return false, err
+	}
+
+	return data != nil, nil
+}
+
 func (sl *stateList) UpdateState(state State) error {
 	return sl.AddState(state)
 }
