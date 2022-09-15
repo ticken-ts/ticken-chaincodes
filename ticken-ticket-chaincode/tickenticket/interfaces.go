@@ -8,6 +8,7 @@ import (
 type TicketList interface {
 	AddTicket(ticket *Ticket) error
 	UpdateTicket(ticket *Ticket) error
+	TicketExist(eventID string, ticketID string) (bool, error)
 	GetTicket(eventID string, ticketID string) (*Ticket, error)
 }
 

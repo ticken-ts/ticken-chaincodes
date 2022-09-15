@@ -14,6 +14,10 @@ type StateList interface {
 	// into passed state. Key is the split key value used in Add/Update
 	// joined using a col
 	GetState(key string, state State) error
+
+	// StateExists returns true if the element exists in the world state.
+	// Error should be nil if the element don't exist.
+	StateExists(key string) (bool, error)
 }
 
 // State interface states must implement

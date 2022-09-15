@@ -28,6 +28,10 @@ func (ticketList *ticketList) UpdateTicket(ticket *Ticket) error {
 	return ticketList.stateList.UpdateState(ticket)
 }
 
+func (ticketList *ticketList) TicketExist(eventID string, ticketID string) (bool, error) {
+	return ticketList.stateList.StateExists(TicketCreateKey(eventID, ticketID))
+}
+
 func (ticketList *ticketList) GetTicket(eventID string, ticketID string) (*Ticket, error) {
 	ticket := new(Ticket)
 	ticketKey := TicketCreateKey(eventID, ticketID)

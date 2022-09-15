@@ -9,18 +9,17 @@ type Contract struct {
 	contractapi.Contract
 }
 
-func (c *Contract) Issue(ctx TickenTxContext, payload *ticketPayload) (*Ticket, error) {
+func (c *Contract) Issue(ctx TickenTxContext, ticketID string, eventID string, section string, owner string) (*Ticket, error) {
 	ticketList := ctx.GetTicketList()
 	tickenEventInvoker := ctx.GetTickenEventInvoker()
 
-	payload.Sanitize()
-	if err := payload.Validate(); err != nil {
+	ticket, err := NewTicket(ticketID, eventID, section, owner)
+	if err != nil {
 		return nil, err
 	}
-	eventID, ticketID, section, owner := payload.Deconstruct()
 
-	ticketWithSameKey, err := ticketList.GetTicket(eventID, ticketID)
-	if ticketWithSameKey != nil || err != nil {
+	ticketIsDuplicated, err := ticketList.TicketExist(eventID, ticketID)
+	if ticketIsDuplicated || err != nil {
 		if err != nil {
 			return nil, err
 		} else {
@@ -41,8 +40,6 @@ func (c *Contract) Issue(ctx TickenTxContext, payload *ticketPayload) (*Ticket, 
 	if !isAvailable || err != nil {
 		return nil, err
 	}
-
-	ticket := NewTicket(ticketID, eventID, section, owner)
 
 	if err = ticketList.AddTicket(ticket); err != nil {
 		return nil, err
