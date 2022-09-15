@@ -3,6 +3,7 @@ package ticken_event
 import (
 	"fmt"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"strconv"
 	"time"
 )
 
@@ -52,22 +53,28 @@ func (c *Contract) Create(ctx TransactionContext, eventID string, name string, d
 	return newEvent, nil
 }
 
-func (c *Contract) AddSection(ctx TransactionContext, eventID string, name string, totalTickets int) (*Event, error) {
-	event, err := ctx.GetEventList().GetEvent(eventID)
-	if err != nil {
-		return nil, err
+func (c *Contract) AddSection(ctx TransactionContext, eventID string, name string, totalTickets string) error {
+
+	totalTicketsParsed, conversionError := strconv.Atoi(totalTickets)
+	if conversionError != nil {
+		return conversionError
 	}
 
-	_, err = event.AddSection(name, totalTickets)
-	if err != nil {
-		return nil, err
+	event, getEventError := ctx.GetEventList().GetEvent(eventID)
+	if getEventError != nil {
+		return getEventError
 	}
 
-	if err = ctx.GetEventList().UpdateEvent(event); err != nil {
-		return nil, err
+	_, addSectionError := event.AddSection(name, totalTicketsParsed)
+	if addSectionError != nil {
+		return addSectionError
 	}
 
-	return event, nil
+	if updateError := ctx.GetEventList().UpdateEvent(event); updateError != nil {
+		return updateError
+	}
+
+	return nil
 }
 
 func (c *Contract) EventExists(ctx TransactionContext, eventID string) (bool, error) {
@@ -84,7 +91,13 @@ func (c *Contract) IsAvailable(ctx TransactionContext, eventID string, section s
 	if err != nil {
 		return false, err
 	}
-	return event.IsAvailable(section), nil
+	isAvailable, isAvailableErr := event.IsAvailable(section)
+
+	if isAvailableErr != nil {
+		return false, isAvailableErr
+	}
+
+	return isAvailable, nil
 }
 
 func (c *Contract) AddTicket(ctx TransactionContext, eventID string, section string) error {

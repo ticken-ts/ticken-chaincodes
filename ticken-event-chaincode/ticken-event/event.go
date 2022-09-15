@@ -16,10 +16,10 @@ type Section struct {
 }
 
 type Event struct {
-	EventID  string             `json:"event_id"`
-	Name     string             `json:"name"`
-	date     time.Time          `json:"date"`
-	sections map[string]Section `json:"sections"`
+	EventID  string    `json:"event_id"`
+	Name     string    `json:"name"`
+	date     time.Time `json:"date"`
+	sections []Section `json:"sections"`
 }
 
 func CreateEventKey(eventID string) string {
@@ -46,8 +46,22 @@ func NewEvent(eventID string, name string, date time.Time) *Event {
 	event.Name = name
 	event.EventID = eventID
 	event.date = date
+	event.sections = []Section{}
 
 	return event
+}
+
+func (event *Event) getSection(name string) (*Section, bool) {
+	for _, section := range event.sections {
+		if section.Name == name {
+			return &section, true
+		}
+	}
+	return nil, false
+}
+
+func (event *Event) addSection(newSection Section) {
+	event.sections = append(event.sections, newSection)
 }
 
 func (event *Event) AddSection(name string, totalTickets int) (*Section, error) {
@@ -60,21 +74,27 @@ func (event *Event) AddSection(name string, totalTickets int) (*Section, error) 
 	}
 
 	newSection := Section{Name: name, TotalTickets: totalTickets, RemainingTickets: totalTickets}
-	event.sections[name] = newSection
+	event.addSection(newSection)
 	return &newSection, nil
 }
 
 func (event *Event) HasSection(name string) bool {
-	_, ok := event.sections[name]
+	_, ok := event.getSection(name)
 	return ok
 }
 
-func (event *Event) IsAvailable(section string) bool {
-	return event.sections[section].RemainingTickets > 0
+func (event *Event) IsAvailable(sectionName string) (bool, error) {
+	section, ok := event.getSection(sectionName)
+
+	if !ok {
+		return false, fmt.Errorf("section does not exist")
+	} else {
+		return section.RemainingTickets > 0, nil
+	}
 }
 
 func (event *Event) AddTicket(section string) error {
-	savedSection, ok := event.sections[section]
+	savedSection, ok := event.getSection(section)
 
 	if !ok {
 		return fmt.Errorf("section does not exist")
@@ -97,7 +117,7 @@ func (event *Event) GetSplitKey() []string {
 }
 
 func (event *Event) Serialize() ([]byte, error) {
-	return json.Marshal(Event{})
+	return json.Marshal(event)
 }
 
 // ****************************************************** //
