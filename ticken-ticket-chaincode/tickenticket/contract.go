@@ -50,3 +50,28 @@ func (c *Contract) Issue(ctx TickenTxContext, ticketID string, eventID string, s
 
 	return ticket, nil
 }
+
+func (c *Contract) Sign(ctx TickenTxContext, ticketID string, eventID string, signer string, signature string) (*Ticket, error) {
+	ticketList := ctx.GetTicketList()
+
+	ticketExist, err := ticketList.TicketExist(eventID, ticketID)
+	if !ticketExist || err != nil {
+		if err != nil {
+			return nil, err
+		} else {
+			return nil, fmt.Errorf("ticket %s is not registered on event %s", ticketID, eventID)
+		}
+	}
+
+	ticket, err := ticketList.GetTicket(eventID, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ticket.Sign(signer, signature)
+	if err != nil {
+		return nil, err
+	}
+
+	return ticket, nil
+}
