@@ -82,6 +82,19 @@ func (ticket *Ticket) Sign(signer string, signature string) error {
 	return nil
 }
 
+func (ticket *Ticket) Scan() error {
+	if ticket.Status == SCANNED {
+		return fmt.Errorf("ticket is already scanned")
+	}
+
+	if ticket.Status == ISSUED {
+		return fmt.Errorf("ticket is not signed")
+	}
+
+	ticket.Status = SCANNED
+	return nil
+}
+
 func (ticket *Ticket) isAllowToSign() bool {
 	return ticket.Status == ISSUED
 }
