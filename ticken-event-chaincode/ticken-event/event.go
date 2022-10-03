@@ -18,8 +18,8 @@ type Section struct {
 type Event struct {
 	EventID  string    `json:"event_id"`
 	Name     string    `json:"name"`
-	date     time.Time `json:"date"`
-	sections []Section `json:"sections"`
+	Date     time.Time `json:"Date"`
+	Sections []Section `json:"Sections"`
 }
 
 func CreateEventKey(eventID string) string {
@@ -45,14 +45,14 @@ func NewEvent(eventID string, name string, date time.Time) *Event {
 
 	event.Name = name
 	event.EventID = eventID
-	event.date = date
-	event.sections = []Section{}
+	event.Date = date
+	event.Sections = []Section{}
 
 	return event
 }
 
 func (event *Event) getSection(name string) (*Section, bool) {
-	for _, section := range event.sections {
+	for _, section := range event.Sections {
 		if section.Name == name {
 			return &section, true
 		}
@@ -61,7 +61,7 @@ func (event *Event) getSection(name string) (*Section, bool) {
 }
 
 func (event *Event) addSection(newSection Section) {
-	event.sections = append(event.sections, newSection)
+	event.Sections = append(event.Sections, newSection)
 }
 
 func (event *Event) AddSection(name string, totalTickets int) (*Section, error) {

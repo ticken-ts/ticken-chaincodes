@@ -37,10 +37,10 @@ func (c *Contract) Get(ctx TransactionContext, eventID string) (*Event, error) {
 	return event, nil
 }
 
-func (c *Contract) Create(ctx TransactionContext, eventID string, name string, date string) (*Event, error) {
+func (c *Contract) Create(ctx TransactionContext, eventID string, name string, date string) (*EventDTO, error) {
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing date %s", err.Error())
+		return nil, fmt.Errorf("error parsing Date %s", err.Error())
 	}
 
 	newEvent := NewEvent(eventID, name, parsedDate)
@@ -50,7 +50,21 @@ func (c *Contract) Create(ctx TransactionContext, eventID string, name string, d
 		return nil, err
 	}
 
-	return newEvent, nil
+	organizationID, err := ctx.GetClientIdentity().GetMSPID()
+	if err != nil {
+		return nil, err
+	}
+
+	eventDTO := NewEventDTO(newEvent, organizationID)
+	serialized, err := eventDTO.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ctx.GetStub().SetEvent("create", serialized); err != nil {
+		return nil, err
+	}
+	return eventDTO, nil
 }
 
 func (c *Contract) AddSection(ctx TransactionContext, eventID string, name string, totalTickets string) error {
