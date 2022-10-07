@@ -50,18 +50,8 @@ func (c *Contract) Create(ctx TransactionContext, eventID string, name string, d
 		return nil, err
 	}
 
-	organizationID, err := ctx.GetClientIdentity().GetMSPID()
+	eventDTO, err := c.notifyEvent(ctx, newEvent, "create")
 	if err != nil {
-		return nil, err
-	}
-
-	eventDTO := NewEventDTO(newEvent, organizationID)
-	serialized, err := eventDTO.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := ctx.GetStub().SetEvent("create", serialized); err != nil {
 		return nil, err
 	}
 	return eventDTO, nil
@@ -86,6 +76,11 @@ func (c *Contract) AddSection(ctx TransactionContext, eventID string, name strin
 
 	if updateError := ctx.GetEventList().UpdateEvent(event); updateError != nil {
 		return updateError
+	}
+
+	_, err := c.notifyEvent(ctx, event, "eventModified")
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -134,4 +129,22 @@ func (c *Contract) AddTicket(ctx TransactionContext, eventID string, section str
 	}
 
 	return nil
+}
+
+func (c *Contract) notifyEvent(ctx TransactionContext, newEvent *Event, notificationType string) (*EventDTO, error) {
+	organizationID, err := ctx.GetClientIdentity().GetMSPID()
+	if err != nil {
+		return nil, err
+	}
+
+	eventDTO := NewEventDTO(newEvent, organizationID)
+	serialized, err := eventDTO.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ctx.GetStub().SetEvent(notificationType, serialized); err != nil {
+		return nil, err
+	}
+	return eventDTO, nil
 }
