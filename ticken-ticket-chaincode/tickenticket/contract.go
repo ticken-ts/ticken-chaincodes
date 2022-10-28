@@ -9,7 +9,7 @@ type Contract struct {
 	contractapi.Contract
 }
 
-func (c *Contract) Issue(ctx TickenTxContext, ticketID string, eventID string, section string, owner string) (*Ticket, error) {
+func (c *Contract) Issue(ctx ITickenTxContext, ticketID string, eventID string, section string, owner string) (*Ticket, error) {
 	ticketList := ctx.GetTicketList()
 	tickenEventInvoker := ctx.GetTickenEventInvoker()
 
@@ -51,7 +51,7 @@ func (c *Contract) Issue(ctx TickenTxContext, ticketID string, eventID string, s
 	return ticket, nil
 }
 
-func (c *Contract) Sign(ctx TickenTxContext, ticketID string, eventID string, signer string, signature string) (*Ticket, error) {
+func (c *Contract) Sign(ctx ITickenTxContext, ticketID string, eventID string, signer string, signature string) (*Ticket, error) {
 	ticketList := ctx.GetTicketList()
 
 	ticketExist, err := ticketList.TicketExist(eventID, ticketID)
@@ -76,7 +76,7 @@ func (c *Contract) Sign(ctx TickenTxContext, ticketID string, eventID string, si
 	return ticket, nil
 }
 
-func (c *Contract) Scan(ctx TickenTxContext, ticketID string, eventID string, owner string) (*Ticket, error) {
+func (c *Contract) Scan(ctx ITickenTxContext, ticketID string, eventID string, owner string) (*Ticket, error) {
 	ticketList := ctx.GetTicketList()
 
 	ticketExist, err := ticketList.TicketExist(eventID, ticketID)

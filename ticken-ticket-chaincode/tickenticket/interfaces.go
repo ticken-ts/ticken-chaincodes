@@ -12,7 +12,7 @@ type TicketList interface {
 	GetTicket(eventID string, ticketID string) (*Ticket, error)
 }
 
-type TickenTxContext interface {
+type ITickenTxContext interface {
 	contractapi.TransactionContextInterface
 	GetTicketList() TicketList
 	GetTickenEventInvoker() ccinvokers.TickenEventInvoker

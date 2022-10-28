@@ -1,4 +1,4 @@
-module ticken-ticket-contract
+module ticken-event-contract
 
 go 1.18
 

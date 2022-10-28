@@ -6,27 +6,27 @@ import (
 )
 
 // TransactionContext implementation of
-// TickenTxContext for use with
+// ITickenTxContext for use with
 // commercial paper contract
-type tickenTxContext struct {
+type TickenTxContext struct {
 	contractapi.TransactionContext
 	ticketList           TicketList
 	tickenEventCCInvoker ccinvokers.TickenEventInvoker
 }
 
-func NewTransactionContext() *tickenTxContext {
-	return new(tickenTxContext)
+func NewTransactionContext() *TickenTxContext {
+	return new(TickenTxContext)
 }
 
 // GetTicketList return ticken-event ticketList
-func (ctx *tickenTxContext) GetTicketList() TicketList {
+func (ctx *TickenTxContext) GetTicketList() TicketList {
 	if ctx.ticketList == nil {
 		ctx.ticketList = NewTicketList(ctx.GetStub())
 	}
 	return ctx.ticketList
 }
 
-func (ctx *tickenTxContext) GetTickenEventInvoker() ccinvokers.TickenEventInvoker {
+func (ctx *TickenTxContext) GetTickenEventInvoker() ccinvokers.TickenEventInvoker {
 	if ctx.tickenEventCCInvoker == nil {
 		ctx.tickenEventCCInvoker = ccinvokers.NewTickenEventInvoker(ctx.GetStub())
 	}

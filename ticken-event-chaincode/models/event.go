@@ -1,9 +1,9 @@
-package ticken_event
+package models
 
 import (
 	"encoding/json"
 	"fmt"
-	ledgerapi "ticken-ticket-contract/ledger-api"
+	"ticken-event-contract/ledgerapi"
 	"time"
 )
 
@@ -16,17 +16,18 @@ type Section struct {
 }
 
 type Event struct {
-	EventID  string    `json:"event_id"`
-	Name     string    `json:"name"`
-	Date     time.Time `json:"Date"`
-	Sections []Section `json:"Sections"`
+	EventID        string    `json:"event_id"`
+	Name           string    `json:"name"`
+	Date           time.Time `json:"Date"`
+	Sections       []Section `json:"Sections"`
+	OrganizationID string    `json:"organization_id"`
 }
 
-func CreateEventKey(eventID string) string {
+func EventCreateKey(eventID string) string {
 	return ledgerapi.MakeKey(eventID)
 }
 
-func Deserialize(jsonBytes []byte, event *Event) error {
+func EventDeserialize(jsonBytes []byte, event *Event) error {
 	err := json.Unmarshal(jsonBytes, event)
 
 	if err != nil {
@@ -40,13 +41,14 @@ func Deserialize(jsonBytes []byte, event *Event) error {
 
 // ******************** Primitives ********************** //
 
-func NewEvent(eventID string, name string, date time.Time) *Event {
+func NewEvent(eventID string, name string, date time.Time, organizationID string) *Event {
 	event := new(Event)
 
 	event.Name = name
-	event.EventID = eventID
 	event.Date = date
+	event.EventID = eventID
 	event.Sections = []Section{}
+	event.OrganizationID = organizationID
 
 	return event
 }
@@ -110,10 +112,13 @@ func (event *Event) AddTicket(section string) error {
 }
 
 // The following implementations are required
-// to implement the StateInterface.
+// to implement the State.
 
-func (event *Event) GetSplitKey() []string {
-	return []string{event.EventID}
+// The following implementations are required
+// to implement the State.
+
+func (event *Event) GetKey() string {
+	return ledgerapi.MakeKey(event.EventID)
 }
 
 func (event *Event) Serialize() ([]byte, error) {

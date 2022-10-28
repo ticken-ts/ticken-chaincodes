@@ -1,7 +1,7 @@
-package ticken_event
+package ccnotifier
 
 import (
-	"encoding/json"
+	"ticken-event-contract/models"
 	"time"
 )
 
@@ -19,8 +19,7 @@ type EventDTO struct {
 	OrganizationID string       `json:"organization_id"`
 }
 
-func NewEventDTO(event *Event, organizationID string) *EventDTO {
-
+func MapEventToNotificationDTO(event *models.Event) *EventDTO {
 	sectionsDTO := make([]SectionDTO, len(event.Sections))
 	for i, section := range event.Sections {
 		sectionsDTO[i] = SectionDTO{
@@ -35,10 +34,6 @@ func NewEventDTO(event *Event, organizationID string) *EventDTO {
 		Name:           event.Name,
 		Date:           event.Date,
 		Sections:       sectionsDTO,
-		OrganizationID: organizationID,
+		OrganizationID: event.OrganizationID,
 	}
-}
-
-func (event *EventDTO) Serialize() ([]byte, error) {
-	return json.Marshal(event)
 }

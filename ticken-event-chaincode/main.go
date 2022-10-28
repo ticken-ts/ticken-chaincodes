@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"ticken-ticket-contract/ticken-event"
+	"ticken-event-contract/ticken-event"
 )
 
 func main() {
