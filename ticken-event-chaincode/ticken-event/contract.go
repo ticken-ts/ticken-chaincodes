@@ -56,7 +56,7 @@ func (c *Contract) AddSection(ctx ITickenTxContext, eventID string, name string,
 		return nil, updateError
 	}
 
-	err := ctx.GetNotifier().NotifySectionAddition(newSection)
+	err := ctx.GetNotifier().NotifySectionAddition(newSection, eventID)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ type SectionDTO struct {
 	Name             string `json:"name"`
 	TotalTickets     int    `json:"total_tickets"`
 	RemainingTickets int    `json:"remaining_tickets"`
+	EventID          string `json:"event_id"`
 }
 
 type EventDTO struct {
@@ -27,10 +28,11 @@ func MapEventToDTO(event *models.Event) *EventDTO {
 	}
 }
 
-func MapSectionToDTO(section *models.Section) *SectionDTO {
+func MapSectionToDTO(section *models.Section, eventID string) *SectionDTO {
 	return &SectionDTO{
 		Name:             section.Name,
 		RemainingTickets: section.RemainingTickets,
 		TotalTickets:     section.TotalTickets,
+		EventID:          eventID,
 	}
 }

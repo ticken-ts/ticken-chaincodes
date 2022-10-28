@@ -31,8 +31,8 @@ func (notifier *CCNotifier) NotifyEventCreation(event *models.Event) error {
 	return notifier.Notify(bytes, EventCreatedNotification)
 }
 
-func (notifier *CCNotifier) NotifySectionAddition(section *models.Section) error {
-	sectionDTO := MapSectionToDTO(section)
+func (notifier *CCNotifier) NotifySectionAddition(section *models.Section, eventID string) error {
+	sectionDTO := MapSectionToDTO(section, eventID)
 	bytes, err := json.Marshal(sectionDTO)
 	if err != nil {
 		return err

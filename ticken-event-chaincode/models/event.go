@@ -62,10 +62,6 @@ func (event *Event) getSection(name string) (*Section, bool) {
 	return nil, false
 }
 
-func (event *Event) addSection(newSection Section) {
-	event.Sections = append(event.Sections, newSection)
-}
-
 func (event *Event) AddSection(name string, totalTickets int) (*Section, error) {
 	if totalTickets <= 0 {
 		return nil, fmt.Errorf("total tickets must be greater than 0")
@@ -75,8 +71,13 @@ func (event *Event) AddSection(name string, totalTickets int) (*Section, error) 
 		return nil, fmt.Errorf("section with name %s already exists", name)
 	}
 
-	newSection := Section{Name: name, TotalTickets: totalTickets, RemainingTickets: totalTickets}
-	event.addSection(newSection)
+	newSection := Section{
+		Name:             name,
+		TotalTickets:     totalTickets,
+		RemainingTickets: totalTickets,
+	}
+
+	event.Sections = append(event.Sections, newSection)
 	return &newSection, nil
 }
 
