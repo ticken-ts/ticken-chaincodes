@@ -28,9 +28,9 @@ func (ctx *TickenTxContext) GetEventList() EventListInterface {
 	return ctx.eventList
 }
 
-// GetEventList return cc-notifier
+// GetNotifier return cc-notifier
 func (ctx *TickenTxContext) GetNotifier() ccnotifier.Notifier {
-	if ctx.eventList == nil {
+	if ctx.notifier == nil {
 		ctx.notifier = ccnotifier.NewNotifier(ctx.GetStub())
 	}
 	return ctx.notifier
