@@ -3,10 +3,10 @@ package models
 import "fmt"
 
 type Section struct {
-	Name         string
-	TicketPrice  float64
-	TotalTickets int
-	SoldTickets  int
+	Name         string  `json:"name"`
+	TicketPrice  float64 `json:"ticket_price"`
+	TotalTickets int     `json:"total_tickets"`
+	SoldTickets  int     `json:"sold_tickets"`
 }
 
 func (section *Section) RemainingTickets() int {

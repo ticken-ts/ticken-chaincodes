@@ -12,14 +12,14 @@ import (
 // *********************** Event ************************ //
 
 type Event struct {
-	EventID  string
-	Name     string
-	Date     time.Time
-	Sections []*Section
+	EventID  string     `json:"event_id"`
+	Name     string     `json:"name"`
+	Date     time.Time  `json:"date"`
+	Sections []*Section `json:"sections"`
 
 	// identity of the event and auditory
-	MSPID             string
-	OrganizerUsername string
+	MSPID             string `json:"msp_id"`
+	OrganizerUsername string `json:"organizer_username"`
 }
 
 func EventCreateKey(eventID string) string {
