@@ -69,6 +69,7 @@ func (event *Event) AddSection(name string, totalTickets int, ticketPrice float6
 
 	newSection := &Section{
 		Name:         name,
+		EventID:      event.EventID,
 		SoldTickets:  0,
 		TotalTickets: totalTickets,
 		TicketPrice:  twoDecimalsPrice,

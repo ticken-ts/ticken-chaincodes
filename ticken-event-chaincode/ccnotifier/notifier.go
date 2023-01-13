@@ -22,9 +22,7 @@ func NewNotifier(stub shim.ChaincodeStubInterface) *CCNotifier {
 }
 
 func (notifier *CCNotifier) NotifyEventCreation(event *models.Event) error {
-	eventDTO := MapEventToDTO(event)
-	bytes, err := json.Marshal(eventDTO)
-
+	bytes, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
@@ -32,9 +30,8 @@ func (notifier *CCNotifier) NotifyEventCreation(event *models.Event) error {
 	return notifier.Notify(bytes, EventCreatedNotification)
 }
 
-func (notifier *CCNotifier) NotifySectionAddition(section *models.Section, eventID string) error {
-	sectionDTO := MapSectionToDTO(section, eventID)
-	bytes, err := json.Marshal(sectionDTO)
+func (notifier *CCNotifier) NotifySectionAddition(section *models.Section) error {
+	bytes, err := json.Marshal(section)
 	if err != nil {
 		return err
 	}
