@@ -13,6 +13,8 @@ type Contract struct {
 	contractapi.Contract
 }
 
+// ******************* Transactions ********************* //
+
 func (c *Contract) Create(ctx ITickenTxContext, eventID, name, date string) (*models.Event, error) {
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
@@ -72,6 +74,29 @@ func (c *Contract) AddSection(ctx ITickenTxContext, eventID, name, totalTickets,
 	return event, nil
 }
 
+func (c *Contract) SellTicket(ctx ITickenTxContext, eventID string, section string) error {
+	event, err := ctx.GetEventList().GetEvent(eventID)
+	if err != nil {
+		return err
+	}
+
+	if err = event.SellTicketInSection(section); err != nil {
+		return err
+	}
+
+	if err = ctx.GetEventList().UpdateEvent(event); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ****************************************************** //
+//
+//
+//
+// ********************** Queries *********************** //
+
 func (c *Contract) Get(ctx ITickenTxContext, eventID string) (*models.Event, error) {
 	event, err := ctx.GetEventList().GetEvent(eventID)
 	if err != nil {
@@ -101,24 +126,4 @@ func (c *Contract) IsAvailable(ctx ITickenTxContext, eventID string, section str
 	return isAvailable, nil
 }
 
-func (c *Contract) AddTicket(ctx ITickenTxContext, eventID string, section string) error {
-	event, err := ctx.GetEventList().GetEvent(eventID)
-
-	if err != nil {
-		return err
-	}
-
-	err = event.SellTicketInSection(section)
-
-	if err != nil {
-		return err
-	}
-
-	err = ctx.GetEventList().UpdateEvent(event)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+// ****************************************************** //

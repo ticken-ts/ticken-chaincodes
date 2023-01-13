@@ -6,10 +6,11 @@ import (
 )
 
 type SectionDTO struct {
-	EventID      string `json:"event_id"`
-	Name         string `json:"name"`
-	TotalTickets int    `json:"total_tickets"`
-	SoldTickets  int    `json:"sold_tickets"`
+	EventID      string  `json:"event_id"`
+	Name         string  `json:"name"`
+	TicketPrice  float64 `json:"ticket_price"`
+	TotalTickets int     `json:"total_tickets"`
+	SoldTickets  int     `json:"sold_tickets"`
 }
 
 type EventDTO struct {
@@ -34,6 +35,7 @@ func MapSectionToDTO(section *models.Section, eventID string) *SectionDTO {
 	return &SectionDTO{
 		EventID:      eventID,
 		Name:         section.Name,
+		TicketPrice:  section.TicketPrice,
 		SoldTickets:  section.SoldTickets,
 		TotalTickets: section.TotalTickets,
 	}
