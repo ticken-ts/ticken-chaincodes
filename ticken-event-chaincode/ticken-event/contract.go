@@ -2,6 +2,7 @@ package ticken_event
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"strconv"
 	"ticken-event-contract/models"
@@ -12,52 +13,59 @@ type Contract struct {
 	contractapi.Contract
 }
 
-func (c *Contract) Create(ctx ITickenTxContext, eventID string, name string, date string) (*models.Event, error) {
+func (c *Contract) Create(ctx ITickenTxContext, eventID, name, date string) (*models.Event, error) {
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing Date %s", err.Error())
 	}
-
-	organizationID, err := ctx.GetClientIdentity().GetMSPID()
+	uuidEventID, err := uuid.Parse(eventID)
 	if err != nil {
-		return nil, fmt.Errorf("could not get organization id")
+		return nil, fmt.Errorf("error parsing event id %s", err.Error())
 	}
 
-	newEvent := models.NewEvent(eventID, name, parsedDate, organizationID)
-	err = ctx.GetEventList().AddEvent(newEvent)
+	mspID, organizerUsername, err := ctx.GetCallerIdentity()
 	if err != nil {
 		return nil, err
 	}
 
-	err = ctx.GetNotifier().NotifyEventCreation(newEvent)
-	if err != nil {
+	newEvent := models.NewEvent(uuidEventID, name, parsedDate, mspID, organizerUsername)
+
+	if err = ctx.GetEventList().AddEvent(newEvent); err != nil {
 		return nil, err
 	}
+
+	if err = ctx.GetNotifier().NotifyEventCreation(newEvent); err != nil {
+		return nil, err
+	}
+
 	return newEvent, nil
 }
 
-func (c *Contract) AddSection(ctx ITickenTxContext, eventID string, name string, totalTickets string) (*models.Event, error) {
-	totalTicketsParsed, conversionError := strconv.Atoi(totalTickets)
-	if conversionError != nil {
-		return nil, conversionError
-	}
-
-	event, getEventError := ctx.GetEventList().GetEvent(eventID)
-	if getEventError != nil {
-		return nil, getEventError
-	}
-
-	newSection, addSectionError := event.AddSection(name, totalTicketsParsed)
-	if addSectionError != nil {
-		return nil, addSectionError
-	}
-
-	if updateError := ctx.GetEventList().UpdateEvent(event); updateError != nil {
-		return nil, updateError
-	}
-
-	err := ctx.GetNotifier().NotifySectionAddition(newSection, eventID)
+func (c *Contract) AddSection(ctx ITickenTxContext, eventID, name, totalTickets, ticketPrice string) (*models.Event, error) {
+	totalTicketsParsed, err := strconv.Atoi(totalTickets)
 	if err != nil {
+		return nil, fmt.Errorf("error converting total ticket")
+	}
+	ticketPriceParsed, err := strconv.ParseFloat(ticketPrice, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error converting ticket price")
+	}
+
+	event, err := ctx.GetEventList().GetEvent(eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	newSection, err := event.AddSection(name, totalTicketsParsed, ticketPriceParsed)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ctx.GetEventList().UpdateEvent(event); err != nil {
+		return nil, err
+	}
+
+	if err = ctx.GetNotifier().NotifySectionAddition(newSection, eventID); err != nil {
 		return nil, err
 	}
 
@@ -87,11 +95,8 @@ func (c *Contract) IsAvailable(ctx ITickenTxContext, eventID string, section str
 	if err != nil {
 		return false, err
 	}
-	isAvailable, isAvailableErr := event.IsAvailable(section)
 
-	if isAvailableErr != nil {
-		return false, isAvailableErr
-	}
+	isAvailable := event.SectionIsAvailable(section)
 
 	return isAvailable, nil
 }
@@ -103,7 +108,7 @@ func (c *Contract) AddTicket(ctx ITickenTxContext, eventID string, section strin
 		return err
 	}
 
-	err = event.AddTicket(section)
+	err = event.SellTicketInSection(section)
 
 	if err != nil {
 		return err

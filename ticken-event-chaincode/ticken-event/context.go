@@ -1,6 +1,7 @@
 package ticken_event
 
 import (
+	"fmt"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"ticken-event-contract/ccnotifier"
 )
@@ -34,4 +35,18 @@ func (ctx *TickenTxContext) GetNotifier() ccnotifier.Notifier {
 		ctx.notifier = ccnotifier.NewNotifier(ctx.GetStub())
 	}
 	return ctx.notifier
+}
+
+func (ctx *TickenTxContext) GetCallerIdentity() (string, string, error) {
+	mspID, err := ctx.GetClientIdentity().GetMSPID()
+	if err == nil {
+		return "", "", fmt.Errorf("could not get MSP ID")
+	}
+
+	username, err := ctx.GetClientIdentity().GetID()
+	if err == nil {
+		return "", "", fmt.Errorf("could not get user")
+	}
+
+	return mspID, username, nil
 }

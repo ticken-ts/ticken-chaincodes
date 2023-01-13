@@ -17,4 +17,5 @@ type ITickenTxContext interface {
 	contractapi.TransactionContextInterface
 	GetEventList() EventListInterface
 	GetNotifier() ccnotifier.Notifier
+	GetCallerIdentity() (string, string, error)
 }

@@ -24,6 +24,7 @@ func NewNotifier(stub shim.ChaincodeStubInterface) *CCNotifier {
 func (notifier *CCNotifier) NotifyEventCreation(event *models.Event) error {
 	eventDTO := MapEventToDTO(event)
 	bytes, err := json.Marshal(eventDTO)
+
 	if err != nil {
 		return err
 	}
