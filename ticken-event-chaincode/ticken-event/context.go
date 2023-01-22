@@ -39,12 +39,12 @@ func (ctx *TickenTxContext) GetNotifier() ccnotifier.Notifier {
 
 func (ctx *TickenTxContext) GetCallerIdentity() (string, string, error) {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
-	if err == nil {
+	if err != nil {
 		return "", "", fmt.Errorf("could not get MSP ID")
 	}
 
 	username, err := ctx.GetClientIdentity().GetID()
-	if err == nil {
+	if err != nil {
 		return "", "", fmt.Errorf("could not get user")
 	}
 

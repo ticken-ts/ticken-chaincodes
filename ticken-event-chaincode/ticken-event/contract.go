@@ -63,11 +63,11 @@ func (c *Contract) AddSection(ctx ITickenTxContext, eventID, name, totalTickets,
 		return nil, err
 	}
 
-	if err = ctx.GetEventList().UpdateEvent(event); err != nil {
+	if err := ctx.GetEventList().UpdateEvent(event); err != nil {
 		return nil, err
 	}
 
-	if err = ctx.GetNotifier().NotifySectionAddition(newSection); err != nil {
+	if err := ctx.GetNotifier().NotifySectionAddition(newSection); err != nil {
 		return nil, err
 	}
 
