@@ -1,27 +1,22 @@
 package main
 
 import (
+	"ccevent/contract"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"log"
 	"os"
 	"strconv"
-	"ticken-event-contract/tickenevent"
 )
-
-const chaincodeName = "cc-event"
-const chaincodeVersion = "1.0.0"
 
 func main() {
 	// add metadata and init transaction context
-	tickenEventContract := new(tickenevent.Contract)
-	tickenEventContract.Name = chaincodeName
-	tickenEventContract.Info.Version = chaincodeVersion
-	tickenEventContract.TransactionContextHandler = tickenevent.NewTransactionContext()
+	tickenEventContract := new(contract.Contract)
+	tickenEventContract.Name = contract.Name
 
 	cc, err := contractapi.NewChaincode(tickenEventContract)
 	if err != nil {
-		log.Panicf("error creating %s chaincode: %s", chaincodeName, err)
+		log.Panicf("error creating %s chaincode: %s", contract.Name, err)
 	}
 
 	server := &shim.ChaincodeServer{
@@ -32,7 +27,7 @@ func main() {
 	}
 
 	if err := server.Start(); err != nil {
-		log.Panicf("error starting %s chaincode service: %s", chaincodeName, err)
+		log.Panicf("error starting %s chaincode service: %s", contract.Name, err)
 	}
 }
 

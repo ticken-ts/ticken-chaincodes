@@ -1,4 +1,4 @@
-package ticken_event
+package tickenevent
 
 import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"

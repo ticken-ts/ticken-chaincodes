@@ -1,50 +1,33 @@
 package main
 
 import (
+	"ccevent/contract"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"log"
 	"os"
 	"strconv"
-	"ticken-ticket-contract/tickenticket"
 )
 
-type serverConfig struct {
-	CCID    string
-	Address string
-}
-
 func main() {
-	config := serverConfig{
-		CCID:    os.Getenv("CHAINCODE_ID"),
-		Address: os.Getenv("CHAINCODE_SERVER_ADDRESS"),
-	}
-
 	// add metadata and init transaction context
-	tickenTicketContract := new(tickenticket.Contract)
-	tickenTicketContract.Info.Version = "0.0.1"
-	tickenTicketContract.Name = "tickenticket-contract"
-	tickenTicketContract.TransactionContextHandler = tickenticket.NewTransactionContext()
+	tickenEventContract := new(contract.Contract)
+	tickenEventContract.Name = contract.Name
 
-	cc, err := contractapi.NewChaincode(tickenTicketContract)
+	cc, err := contractapi.NewChaincode(tickenEventContract)
 	if err != nil {
-		panic(err.Error())
+		log.Panicf("error creating %s chaincode: %s", contract.Name, err)
 	}
-
-	//err = cc.Start()
-	//if err != nil {
-	//	panic(err.Error())
-	// }
 
 	server := &shim.ChaincodeServer{
-		CCID:     config.CCID,
-		Address:  config.Address,
+		CCID:     getEnvOrPanic("CHAINCODE_ID"),
+		Address:  getEnvOrPanic("CHAINCODE_SERVER_ADDRESS"),
 		CC:       cc,
 		TLSProps: getTLSProperties(),
 	}
 
 	if err := server.Start(); err != nil {
-		log.Panicf("error starting asset-transfer-basic chaincode: %s", err)
+		log.Panicf("error starting %s chaincode service: %s", contract.Name, err)
 	}
 }
 
@@ -56,7 +39,7 @@ func getTLSProperties() shim.TLSProperties {
 	clientCACert := getEnvOrDefault("CHAINCODE_CLIENT_CA_CERT", "")
 
 	// convert tlsDisabledStr to boolean
-	tlsDisabled := getBoolOrDefault(tlsDisabledStr, false)
+	tlsDisabled, _ := strconv.ParseBool(tlsDisabledStr)
 	var keyBytes, certBytes, clientCACertBytes []byte
 	var err error
 
@@ -94,12 +77,10 @@ func getEnvOrDefault(env, defaultVal string) string {
 	return value
 }
 
-// Note that the method returns default value if the string
-// cannot be parsed!
-func getBoolOrDefault(value string, defaultVal bool) bool {
-	parsed, err := strconv.ParseBool(value)
-	if err != nil {
-		return defaultVal
+func getEnvOrPanic(env string) string {
+	value, ok := os.LookupEnv(env)
+	if !ok {
+		log.Panicf("required env value %s not foudn", env)
 	}
-	return parsed
+	return value
 }

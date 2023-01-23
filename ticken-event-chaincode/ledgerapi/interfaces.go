@@ -1,7 +1,6 @@
 package ledgerapi
 
-// StateList functions that a state list
-// should have
+// StateList functions that a state list should have
 type StateList interface {
 	// AddState puts state into world state
 	AddState(state State) error

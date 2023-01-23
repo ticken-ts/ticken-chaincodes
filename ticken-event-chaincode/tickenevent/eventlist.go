@@ -1,4 +1,4 @@
-package ticken_event
+package tickenevent
 
 import (
 	"fmt"
@@ -7,15 +7,9 @@ import (
 	"ticken-event-contract/models"
 )
 
-// *********************** List ************************* //
-
 type eventList struct {
 	stateList ledgerapi.StateList
 }
-
-// ****************************************************** //
-
-// ******************** Primitives ********************** //
 
 func NewEventList(stub shim.ChaincodeStubInterface) EventListInterface {
 	deserializeFunction := func(bytes []byte, state ledgerapi.State) error {
@@ -62,5 +56,3 @@ func (eventList *eventList) GetEvent(eventID string) (*models.Event, error) {
 
 	return event, nil
 }
-
-// ****************************************************** //

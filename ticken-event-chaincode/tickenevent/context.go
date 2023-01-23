@@ -1,4 +1,4 @@
-package ticken_event
+package tickenevent
 
 import (
 	"fmt"
