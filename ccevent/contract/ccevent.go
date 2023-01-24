@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/ticken-ts/ticken-chaincodes/common"
 	"math"
 	"strconv"
 	"time"
@@ -39,25 +42,24 @@ type Section struct {
 	SoldTickets  int       `json:"sold_tickets"`
 }
 
-func (c *Contract) Create(ctx contractapi.TransactionContextInterface, eventID, name, date string) (*Event, error) {
-	_, err := c.GetEvent(ctx, eventID)
+func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date string) peer.Response {
+	_, err := findEvent(ctx, eventID)
 	if err != nil {
-		return nil, err
+		return ccErr(err.Error())
 	}
 
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("error parsing date: %v", err))
+		return ccErr("error parsing date: %v", err)
 	}
-
 	eventIDParsed, err := uuid.Parse(eventID)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("error parsing event id: %v", err))
+		return ccErr("error parsing event id: %v", err)
 	}
 
-	mspID, orgUsername, err := getContextIdentity(ctx)
+	mspID, orgUsername, err := ctx.GetContextIdentity()
 	if err != nil {
-		return nil, ccError(fmt.Errorf("cound not get context identity: %v", err))
+		return ccErr("could not get context identity: %v", err)
 	}
 
 	event := Event{
@@ -78,38 +80,62 @@ func (c *Contract) Create(ctx contractapi.TransactionContextInterface, eventID, 
 
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("failed to serialize event; %v", err))
+		return ccErr("failed to serialize event; %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return nil, ccError(fmt.Errorf("failed to updated the state: %v", err))
+		return ccErr("failed to updated  tate: %v", err)
 	}
 
-	return &event, nil
+	return shim.Success(eventJSON)
 }
 
-func (c *Contract) AddSection(ctx contractapi.TransactionContextInterface, eventID, name, totalTickets, ticketPrice string) (*Section, error) {
-	event, err := c.GetEvent(ctx, eventID)
+func (c *Contract) SetEventOnSale(ctx common.ITickenTxContext, eventID string) peer.Response {
+	event, err := findEvent(ctx, eventID)
 	if err != nil {
-		return nil, err
+		return ccErr(err.Error())
+	}
+
+	if event.OnSale {
+		return ccErr("event %s already is on sale", event.EventID)
+	}
+
+	event.OnSale = true
+
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		return ccErr("failed to serialize event: %v", err)
+	}
+
+	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
+		return ccErr("failed to updated  tate: %v", err)
+	}
+
+	return shim.Success(nil)
+}
+
+func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalTickets, ticketPrice string) peer.Response {
+	event, err := findEvent(ctx, eventID)
+	if err != nil {
+		return ccErr(err.Error())
 	}
 
 	totalTicketsParsed, err := strconv.Atoi(totalTickets)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("error converting total ticket: %v", err))
+		return ccErr("error converting total ticket: %v", err)
 	}
 	ticketPriceParsed, err := strconv.ParseFloat(ticketPrice, 64)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("error converting ticket price: %v", err))
+		return ccErr("error converting ticket price: %v", err)
 	}
 
 	if totalTicketsParsed <= 0 {
-		return nil, ccError(fmt.Errorf("invalid total tickets value %d - total tickets must be greater than 0", totalTicketsParsed))
+		return ccErr("invalid total tickets value %d - total tickets must be greater than 0", totalTicketsParsed)
 	}
 
 	for _, section := range event.Sections {
 		if section.Name == name {
-			return nil, ccError(fmt.Errorf("section with name %s already exists", name))
+			return ccErr("section with name %s already exists", name)
 		}
 	}
 
@@ -129,42 +155,43 @@ func (c *Contract) AddSection(ctx contractapi.TransactionContextInterface, event
 
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize event; %v", err)
+		return ccErr("failed to serialize event; %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return nil, ccError(fmt.Errorf("failed to updated the state: %v", err))
+		return ccErr("failed to updated the state: %v", err)
 	}
 
-	return &newSection, nil
+	sectionJSON, err := json.Marshal(&newSection)
+	if err != nil {
+		return ccErr("failed to serialize section; %v", err)
+	}
+
+	return shim.Success(sectionJSON)
 }
 
-func (c *Contract) GetEvent(ctx contractapi.TransactionContextInterface, eventID string) (*Event, error) {
-	eventJSON, err := ctx.GetStub().GetState(eventID)
+func (c *Contract) GetEvent(ctx common.ITickenTxContext, eventID string) peer.Response {
+	event, err := findEvent(ctx, eventID)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("failed to read event: %v", err))
-	}
-	if eventJSON == nil {
-		return nil, ccError(fmt.Errorf("the event %s does not exist", eventID))
+		return ccErr(err.Error())
 	}
 
-	var event Event
-	err = json.Unmarshal(eventJSON, &event)
+	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return nil, ccError(fmt.Errorf("failed to descerialize event: %v", err))
+		return ccErr("failed to serialize event: %v", err)
 	}
 
-	return &event, nil
+	return shim.Success(eventJSON)
 }
 
-func (c *Contract) SellTicket(ctx contractapi.TransactionContextInterface, eventID string, sectionName string) error {
-	event, err := c.GetEvent(ctx, eventID)
+func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, sectionName string) peer.Response {
+	event, err := findEvent(ctx, eventID)
 	if err != nil {
-		return err
+		return ccErr(err.Error())
 	}
 
 	if !event.OnSale {
-		return ccError(fmt.Errorf("event not on sale"))
+		return ccErr("event not on sale")
 	}
 
 	var foundSection *Section
@@ -176,40 +203,44 @@ func (c *Contract) SellTicket(ctx contractapi.TransactionContextInterface, event
 	}
 
 	if foundSection == nil {
-		return ccError(fmt.Errorf("section %s doest not exist in event %s", sectionName, eventID))
+		return ccErr("section %s doest not exist in event %s", sectionName, eventID)
 	}
 
 	if foundSection.SoldTickets == foundSection.TotalTickets {
-		return ccError(fmt.Errorf("section %s is full", sectionName))
+		return ccErr("section %s is full", sectionName)
 	}
 
 	foundSection.SoldTickets += 1
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return ccError(fmt.Errorf("failed to descerialize event: %v", err))
+		return ccErr("failed to deserialize event: %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return ccError(fmt.Errorf("failed to upadate ledger: %v", err))
+		return ccErr("failed to update ledger: %v", err)
 	}
 
-	return nil
+	return shim.Success(nil)
 }
 
-func getContextIdentity(ctx contractapi.TransactionContextInterface) (string, string, error) {
-	mspID, err := ctx.GetClientIdentity().GetMSPID()
+func findEvent(ctx common.ITickenTxContext, eventID string) (*Event, error) {
+	eventJSON, err := ctx.GetStub().GetState(eventID)
 	if err != nil {
-		return "", "", err
+		return nil, fmt.Errorf("failed to read event: %v", err)
+	}
+	if eventJSON == nil {
+		return nil, fmt.Errorf("the event %s does not exist", eventID)
 	}
 
-	username, err := ctx.GetClientIdentity().GetID()
-	if err != nil {
-		return "", "", err
+	var event Event
+	if err := json.Unmarshal(eventJSON, &event); err != nil {
+		return nil, fmt.Errorf("failed to deserialize event: %v", err)
 	}
 
-	return mspID, username, nil
+	return &event, nil
 }
 
-func ccError(err error) error {
-	return fmt.Errorf("[%s] | %v", Name, err)
+func ccErr(format string, args ...any) peer.Response {
+	msg := fmt.Sprintf(format, args)
+	return shim.Error(fmt.Sprintf("[%s] | %v", Name, msg))
 }
