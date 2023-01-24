@@ -14,7 +14,7 @@ type TickenTxContext struct {
 	invokers map[string]*Invoker
 }
 
-func NewTransactionContext() ITickenTxContext {
+func NewTransactionContext() *TickenTxContext {
 	ctx := new(TickenTxContext)
 	ctx.invokers = make(map[string]*Invoker)
 	return ctx
