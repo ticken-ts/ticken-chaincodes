@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ccevent/contract"
+	"ccticket/contract"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/ticken-ts/ticken-chaincodes/common"
@@ -12,11 +12,11 @@ import (
 
 func main() {
 	// add metadata and init transaction context
-	tickenEventContract := new(contract.Contract)
-	tickenEventContract.Name = contract.Name
-	tickenEventContract.TransactionContextHandler = common.NewTransactionContext()
+	ccTicket := new(contract.Contract)
+	ccTicket.Info.Title = "CC Ticket"
+	ccTicket.TransactionContextHandler = common.NewTransactionContext()
 
-	cc, err := contractapi.NewChaincode(tickenEventContract)
+	cc, err := contractapi.NewChaincode(ccTicket)
 	if err != nil {
 		log.Panicf("error creating %s chaincode: %s", contract.Name, err)
 	}

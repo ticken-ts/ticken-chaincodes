@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/ticken-ts/ticken-chaincodes/common"
 	"math"
 	"strconv"
@@ -42,24 +40,36 @@ type Section struct {
 	SoldTickets  int       `json:"sold_tickets"`
 }
 
-func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date string) peer.Response {
-	_, err := findEvent(ctx, eventID)
+// Create a new event without any sections in the blockchain and returns
+// its value. The event is created as out of sale, so it can be updated
+// and sections can be added on following transactions
+//
+// Params
+// * - eventID -> uuid format
+// * - name    -> string
+// * - date    -> RFC3339 format (2006-01-02T15:04:05Z07:00)
+//
+// The return value can be:
+// * - the event created serialized in JSON format
+// * - error in case some conditions to create the event are not fulfilled
+func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date string) (*Event, error) {
+	_, err := c.GetEvent(ctx, eventID)
 	if err != nil {
-		return ccErr(err.Error())
+		return nil, err // this error is already formatted
 	}
 
 	parsedDate, err := time.Parse(time.RFC3339, date)
 	if err != nil {
-		return ccErr("error parsing date: %v", err)
+		return nil, ccErr("error parsing date: %v", err)
 	}
 	eventIDParsed, err := uuid.Parse(eventID)
 	if err != nil {
-		return ccErr("error parsing event id: %v", err)
+		return nil, ccErr("error parsing event id: %v", err)
 	}
 
 	mspID, orgUsername, err := ctx.GetContextIdentity()
 	if err != nil {
-		return ccErr("could not get context identity: %v", err)
+		return nil, ccErr("could not get context identity: %v", err)
 	}
 
 	event := Event{
@@ -80,20 +90,28 @@ func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date strin
 
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return ccErr("failed to serialize event; %v", err)
+		return nil, ccErr("failed to serialize event; %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return ccErr("failed to updated  tate: %v", err)
+		return nil, ccErr("failed to updated  tate: %v", err)
 	}
 
-	return shim.Success(eventJSON)
+	return &event, nil
 }
 
-func (c *Contract) SetEventOnSale(ctx common.ITickenTxContext, eventID string) peer.Response {
-	event, err := findEvent(ctx, eventID)
+// SetEventOnSale sets the previously created event to be "on sale".
+// From this moment, we can start issuing tickets for this event
+//
+// Params
+// * - eventID -> uuid format
+//
+// The return value can be:
+// * - error in case some conditions to create the event are not fulfilled
+func (c *Contract) SetEventOnSale(ctx common.ITickenTxContext, eventID string) error {
+	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
-		return ccErr(err.Error())
+		return err // this error is already formatted
 	}
 
 	if event.OnSale {
@@ -111,31 +129,45 @@ func (c *Contract) SetEventOnSale(ctx common.ITickenTxContext, eventID string) p
 		return ccErr("failed to updated  tate: %v", err)
 	}
 
-	return shim.Success(nil)
+	return nil
 }
 
-func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalTickets, ticketPrice string) peer.Response {
-	event, err := findEvent(ctx, eventID)
+// AddSection add a section on the previously created event
+// Each section is identified uniquely inside the event for its name,
+// so it must be unique for each section. Providing a name that is already
+// in use in the same event will cause this transaction to fail
+//
+// Params
+// * - eventID -> uuid format
+// * - name    -> section name (must be unique)
+// * - totalTickets
+// * - ticketPrice
+//
+// The return value can be:
+// * - the section added serialized in JSON format
+// * - error in case some conditions to add the section are not fulfilled
+func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalTickets, ticketPrice string) (*Section, error) {
+	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
-		return ccErr(err.Error())
+		return nil, err // this error is already formatted
 	}
 
 	totalTicketsParsed, err := strconv.Atoi(totalTickets)
 	if err != nil {
-		return ccErr("error converting total ticket: %v", err)
+		return nil, ccErr("error converting total ticket: %v", err)
 	}
 	ticketPriceParsed, err := strconv.ParseFloat(ticketPrice, 64)
 	if err != nil {
-		return ccErr("error converting ticket price: %v", err)
+		return nil, ccErr("error converting ticket price: %v", err)
 	}
 
 	if totalTicketsParsed <= 0 {
-		return ccErr("invalid total tickets value %d - total tickets must be greater than 0", totalTicketsParsed)
+		return nil, ccErr("invalid total tickets value %d - total tickets must be greater than 0", totalTicketsParsed)
 	}
 
 	for _, section := range event.Sections {
 		if section.Name == name {
-			return ccErr("section with name %s already exists", name)
+			return nil, ccErr("section with name %s already exists", name)
 		}
 	}
 
@@ -155,39 +187,37 @@ func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalT
 
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return ccErr("failed to serialize event; %v", err)
+		return nil, ccErr("failed to serialize event; %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return ccErr("failed to updated the state: %v", err)
+		return nil, ccErr("failed to updated the state: %v", err)
 	}
 
-	sectionJSON, err := json.Marshal(&newSection)
-	if err != nil {
-		return ccErr("failed to serialize section; %v", err)
-	}
-
-	return shim.Success(sectionJSON)
+	return &newSection, nil
 }
 
-func (c *Contract) GetEvent(ctx common.ITickenTxContext, eventID string) peer.Response {
-	event, err := findEvent(ctx, eventID)
+func (c *Contract) GetEvent(ctx common.ITickenTxContext, eventID string) (*Event, error) {
+	eventJSON, err := ctx.GetStub().GetState(eventID)
 	if err != nil {
-		return ccErr(err.Error())
+		return nil, ccErr("failed to read event: %v", err)
+	}
+	if eventJSON == nil {
+		return nil, ccErr("the event %s does not exist", eventID)
 	}
 
-	eventJSON, err := json.Marshal(event)
-	if err != nil {
-		return ccErr("failed to serialize event: %v", err)
+	var event Event
+	if err := json.Unmarshal(eventJSON, &event); err != nil {
+		return nil, ccErr("failed to deserialize event: %v", err)
 	}
 
-	return shim.Success(eventJSON)
+	return &event, nil
 }
 
-func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, sectionName string) peer.Response {
-	event, err := findEvent(ctx, eventID)
+func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, sectionName string) error {
+	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
-		return ccErr(err.Error())
+		return err // this error is already formatted
 	}
 
 	if !event.OnSale {
@@ -220,27 +250,10 @@ func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, secti
 		return ccErr("failed to update ledger: %v", err)
 	}
 
-	return shim.Success(nil)
+	return nil
 }
 
-func findEvent(ctx common.ITickenTxContext, eventID string) (*Event, error) {
-	eventJSON, err := ctx.GetStub().GetState(eventID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read event: %v", err)
-	}
-	if eventJSON == nil {
-		return nil, fmt.Errorf("the event %s does not exist", eventID)
-	}
-
-	var event Event
-	if err := json.Unmarshal(eventJSON, &event); err != nil {
-		return nil, fmt.Errorf("failed to deserialize event: %v", err)
-	}
-
-	return &event, nil
-}
-
-func ccErr(format string, args ...any) peer.Response {
+func ccErr(format string, args ...any) error {
 	msg := fmt.Sprintf(format, args)
-	return shim.Error(fmt.Sprintf("[%s] | %v", Name, msg))
+	return fmt.Errorf("[%s] | %v", Name, msg)
 }
