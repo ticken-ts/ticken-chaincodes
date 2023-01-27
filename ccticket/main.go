@@ -13,6 +13,7 @@ import (
 func main() {
 	// add metadata and init transaction context
 	ccTicket := new(contract.Contract)
+	ccTicket.Name = contract.Name
 	ccTicket.Info.Title = "CC Ticket"
 	ccTicket.TransactionContextHandler = common.NewTransactionContext()
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/ticken-ts/ticken-chaincodes/common"
 )
@@ -22,15 +23,15 @@ const ccEventSellTicketFunc = "SellTicket"
 // *****+************************************ //
 
 type Ticket struct {
-	TicketID uuid.UUID `json:"ticket_id"`
-	Status   Status    `json:"status"`
+	TicketID string `json:"ticket_id"`
+	Status   Status `json:"status"`
 
-	EventID uuid.UUID `json:"event_id"`
-	Section string    `json:"section"`
+	EventID string `json:"event_id"`
+	Section string `json:"section"`
 
 	// represents the owner id in the
 	// web service database
-	OwnerID uuid.UUID `json:"owner"`
+	OwnerID string `json:"owner"`
 }
 
 type Status string
@@ -40,9 +41,9 @@ const (
 )
 
 func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section, ownerID string) (*Ticket, error) {
-	_, err := c.GetTicket(ctx, ticketID)
-	if err != nil {
-		return nil, err // this error is already formatted
+	existentTicket, err := c.GetTicket(ctx, ticketID)
+	if existentTicket != nil {
+		return nil, ccErr("ticket with ID %s already exists", ticketID)
 	}
 
 	ownerIDParsed, err := uuid.Parse(ownerID)
@@ -59,13 +60,13 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 	}
 
 	ticket := Ticket{
-		TicketID: ticketIDParsed,
+		TicketID: ticketIDParsed.String(),
 
-		EventID: eventIDParsed,
+		EventID: eventIDParsed.String(),
 		Section: section,
 		Status:  ISSUED,
 
-		OwnerID: ownerIDParsed,
+		OwnerID: ownerIDParsed.String(),
 	}
 
 	ticketJSON, err := json.Marshal(ticket)
@@ -77,9 +78,14 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 	// note: this operation is atomically handled
 	// by the orderers. So, the ticket and the ticket
 	// count are updated simultaneously in the same tx
-	_, err = ctx.GetInvoker(ccEventName).Invoke(ccEventSellTicketFunc, eventID, section)
-	if err != nil {
-		return nil, ccErr(err.Error())
+	ccEventSellTicketResponse := ctx.GetStub().InvokeChaincode(
+		ccEventName,
+		getCCCallArgs(ccEventSellTicketFunc, eventID, section),
+		ctx.GetStub().GetChannelID(),
+	)
+
+	if ccEventSellTicketResponse.Status != shim.OK {
+		return nil, ccErr(ccEventSellTicketResponse.Message)
 	}
 
 	if err := ctx.GetStub().PutState(ticketID, ticketJSON); err != nil {
@@ -95,7 +101,7 @@ func (c *Contract) GetTicket(ctx contractapi.TransactionContextInterface, ticket
 		return nil, ccErr("failed to read ticket: %v", err)
 	}
 	if ticketJSON == nil {
-		return nil, ccErr("the event %s does not exist", ticketID)
+		return nil, ccErr("ticket %s does not exist", ticketID)
 	}
 
 	var ticket Ticket
@@ -109,4 +115,15 @@ func (c *Contract) GetTicket(ctx contractapi.TransactionContextInterface, ticket
 func ccErr(format string, args ...any) error {
 	msg := fmt.Sprintf(format, args)
 	return fmt.Errorf("[%s] | %v", Name, msg)
+}
+
+func getCCCallArgs(opName string, args ...string) [][]byte {
+	queryArgs := make([][]byte, len(args)+1)
+
+	queryArgs[0] = []byte(opName)
+	for i, arg := range args {
+		queryArgs[i+1] = []byte(arg)
+	}
+
+	return queryArgs
 }
