@@ -18,7 +18,7 @@ type Contract struct {
 const Name = "cc-event"
 
 type Event struct {
-	EventID  uuid.UUID  `json:"event_id"`
+	EventID  string     `json:"event_id"`
 	Name     string     `json:"name"`
 	Date     time.Time  `json:"date"`
 	Sections []*Section `json:"sections"`
@@ -33,11 +33,11 @@ type Event struct {
 }
 
 type Section struct {
-	EventID      uuid.UUID `json:"event_id"`
-	Name         string    `json:"name"`
-	TicketPrice  float64   `json:"ticket_price"`
-	TotalTickets int       `json:"total_tickets"`
-	SoldTickets  int       `json:"sold_tickets"`
+	EventID      string  `json:"event_id"`
+	Name         string  `json:"name"`
+	TicketPrice  float64 `json:"ticket_price"`
+	TotalTickets int     `json:"total_tickets"`
+	SoldTickets  int     `json:"sold_tickets"`
 }
 
 // Create a new event without any sections in the blockchain and returns
@@ -53,9 +53,9 @@ type Section struct {
 // * - the event created serialized in JSON format
 // * - error in case some conditions to create the event are not fulfilled
 func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date string) (*Event, error) {
-	_, err := c.GetEvent(ctx, eventID)
-	if err != nil {
-		return nil, err // this error is already formatted
+	existentEvent, err := c.GetEvent(ctx, eventID)
+	if existentEvent != nil {
+		return nil, ccErr("event with ID %s already exists", eventID)
 	}
 
 	parsedDate, err := time.Parse(time.RFC3339, date)
@@ -73,7 +73,7 @@ func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date strin
 	}
 
 	event := Event{
-		EventID:  eventIDParsed,
+		EventID:  eventIDParsed.String(),
 		Name:     name,
 		Date:     parsedDate,
 		Sections: make([]*Section, 0),
@@ -90,7 +90,7 @@ func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date strin
 
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
-		return nil, ccErr("failed to serialize event; %v", err)
+		return nil, ccErr("failed to serialize event: %v", err)
 	}
 
 	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
