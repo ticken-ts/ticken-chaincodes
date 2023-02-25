@@ -30,6 +30,7 @@ type Ticket struct {
 
 	EventID string `json:"event_id"`
 	Section string `json:"section"`
+	TokenID string `json:"token_id"`
 
 	// represents the owner id in the
 	// web service database
@@ -42,7 +43,7 @@ const (
 	ISSUED Status = "issued"
 )
 
-func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section, ownerID string) (*Ticket, error) {
+func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section, ownerID, tokenID string) (*Ticket, error) {
 	existentTicket, err := c.GetTicket(ctx, ticketID)
 	if existentTicket != nil {
 		return nil, ccErr("ticket with ID %s already exists", ticketID)
@@ -69,6 +70,7 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 		Status:  ISSUED,
 
 		OwnerID: ownerIDParsed.String(),
+		TokenID: tokenID,
 	}
 
 	ticketJSON, err := json.Marshal(ticket)
