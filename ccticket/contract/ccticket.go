@@ -7,6 +7,7 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"github.com/ticken-ts/ticken-chaincodes/common"
+	"math/big"
 )
 
 type Contract struct {
@@ -61,6 +62,10 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 	if err != nil {
 		return nil, ccErr("error parsing ticket id: %v", err)
 	}
+	tokenIDParsed, ok := new(big.Int).SetString(tokenID, 10)
+	if !ok {
+		return nil, ccErr("token ID is not a valid uint256")
+	}
 
 	ticket := Ticket{
 		TicketID: ticketIDParsed.String(),
@@ -70,7 +75,7 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 		Status:  ISSUED,
 
 		OwnerID: ownerIDParsed.String(),
-		TokenID: tokenID,
+		TokenID: tokenIDParsed.String(),
 	}
 
 	ticketJSON, err := json.Marshal(ticket)
