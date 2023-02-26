@@ -28,10 +28,9 @@ const index = "eventID~section~ticketID"
 type Ticket struct {
 	TicketID string `json:"ticket_id"`
 	Status   Status `json:"status"`
-
-	EventID string `json:"event_id"`
-	Section string `json:"section"`
-	TokenID string `json:"token_id"`
+	EventID  string `json:"event_id"`
+	Section  string `json:"section"`
+	TokenID  string `json:"token_id"`
 
 	// represents the owner id in the
 	// web service database
@@ -62,20 +61,18 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 	if err != nil {
 		return nil, ccErr("error parsing ticket id: %v", err)
 	}
-	tokenIDParsed, ok := new(big.Int).SetString(tokenID, 10)
+	tokenIDParsed, ok := new(big.Int).SetString(tokenID, 16)
 	if !ok {
 		return nil, ccErr("token ID is not a valid uint256")
 	}
 
 	ticket := Ticket{
 		TicketID: ticketIDParsed.String(),
-
-		EventID: eventIDParsed.String(),
-		Section: section,
-		Status:  ISSUED,
-
-		OwnerID: ownerIDParsed.String(),
-		TokenID: tokenIDParsed.String(),
+		EventID:  eventIDParsed.String(),
+		Section:  section,
+		Status:   ISSUED,
+		TokenID:  tokenIDParsed.Text(16),
+		OwnerID:  ownerIDParsed.String(),
 	}
 
 	ticketJSON, err := json.Marshal(ticket)
