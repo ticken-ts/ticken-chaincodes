@@ -17,15 +17,32 @@ type Contract struct {
 
 const Name = "cc-event"
 
-type Event struct {
-	EventID  string     `json:"event_id"`
-	Name     string     `json:"name"`
-	Date     time.Time  `json:"date"`
-	Sections []*Section `json:"sections"`
+type EventStatus string
 
-	// indicates if the event is currently
-	// available to sell tickets
-	OnSale bool `json:"on_sale"`
+const (
+	// EventStatusDraft is the status of an
+	// event that is not yet published
+	EventStatusDraft EventStatus = "draft"
+
+	// EventStatusOnSale is the status of an
+	// event that is published for sale
+	EventStatusOnSale EventStatus = "on_sale"
+
+	// EventStatusRunning is the status of an
+	// event that is currently happening
+	EventStatusRunning EventStatus = "running"
+
+	// EventStatusFinished is the status of an
+	// event that has finished
+	EventStatusFinished EventStatus = "finished"
+)
+
+type Event struct {
+	EventID  string      `json:"event_id"`
+	Name     string      `json:"name"`
+	Date     time.Time   `json:"date"`
+	Sections []*Section  `json:"sections"`
+	Status   EventStatus `json:"status"`
 
 	// identity of the event and auditory
 	MSPID             string `json:"msp_id"`
@@ -41,8 +58,8 @@ type Section struct {
 }
 
 // Create a new event without any sections in the blockchain and returns
-// its value. The event is created as out of sale, so it can be updated
-// and sections can be added on following transactions
+// its value. The event is created as with status "EventStatusDraft", so it
+// can be updated and sections can be added on following transactions
 //
 // Params
 // * - eventID -> uuid format
@@ -77,10 +94,7 @@ func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date strin
 		Name:     name,
 		Date:     parsedDate,
 		Sections: make([]*Section, 0),
-
-		// initially the event is marked to
-		// be out of sale, so it can be updated
-		OnSale: false,
+		Status:   EventStatusDraft,
 
 		// this values will be validated from
 		// the values that the chaincode notify us
@@ -98,38 +112,6 @@ func (c *Contract) Create(ctx common.ITickenTxContext, eventID, name, date strin
 	}
 
 	return &event, nil
-}
-
-// SetEventOnSale sets the previously created event to be "on sale".
-// From this moment, we can start issuing tickets for this event
-//
-// Params
-// * - eventID -> uuid format
-//
-// The return value can be:
-// * - error in case some conditions to create the event are not fulfilled
-func (c *Contract) SetEventOnSale(ctx common.ITickenTxContext, eventID string) error {
-	event, err := c.GetEvent(ctx, eventID)
-	if err != nil {
-		return err // this error is already formatted
-	}
-
-	if event.OnSale {
-		return ccErr("event %s already is on sale", event.EventID)
-	}
-
-	event.OnSale = true
-
-	eventJSON, err := json.Marshal(event)
-	if err != nil {
-		return ccErr("failed to serialize event: %v", err)
-	}
-
-	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
-		return ccErr("failed to updated  tate: %v", err)
-	}
-
-	return nil
 }
 
 // AddSection add a section on the previously created event
@@ -150,6 +132,10 @@ func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalT
 	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
 		return nil, err // this error is already formatted
+	}
+
+	if event.Status != EventStatusDraft {
+		return nil, ccErr("event is not in status draft")
 	}
 
 	totalTicketsParsed, err := strconv.Atoi(totalTickets)
@@ -197,6 +183,93 @@ func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalT
 	return &newSection, nil
 }
 
+// StartSale sets the previously created event to be on status
+// "on sale".  From this moment, we can start issuing tickets for
+// this event. In addition, this status blocks any modification or change
+// in the event, including adding sections
+//
+// Params
+// * - eventID -> uuid format
+//
+// The return value can be:
+// * - error in case the event cant transition to state "on_sale"
+func (c *Contract) StartSale(ctx common.ITickenTxContext, eventID string) error {
+	event, err := c.GetEvent(ctx, eventID)
+	if err != nil {
+		return err // this error is already formatted
+	}
+
+	if event.Status == EventStatusOnSale {
+		return ccErr("event %s already is on status", event.EventID, EventStatusOnSale)
+	}
+
+	if event.Status != EventStatusDraft {
+		return ccErr("event cant go from %s to %s", event.Status, EventStatusDraft)
+	}
+
+	// update status from
+	// EventStatusOnSale -> EventStatusOnSale
+	event.Status = EventStatusOnSale
+
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		return ccErr("failed to serialize event: %v", err)
+	}
+
+	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
+		return ccErr("failed to updated  tate: %v", err)
+	}
+
+	return nil
+}
+
+// StartEvent sets the previously created event to be on status
+// "running".  From this moment, is not possible to issue aditional
+// tickets for the event and all tickets start to become available to
+// be scanned
+//
+// Params
+// * - eventID -> uuid format
+//
+// The return value can be:
+// * - error in case the event cant transition to state "running"
+func (c *Contract) StartEvent(ctx common.ITickenTxContext, eventID string) error {
+	event, err := c.GetEvent(ctx, eventID)
+	if err != nil {
+		return err // this error is already formatted
+	}
+
+	if event.Status == EventStatusRunning {
+		return ccErr("event %s already is on status %s", event.EventID, EventStatusRunning)
+	}
+
+	if event.Status != EventStatusRunning {
+		return ccErr("event cant go from %s to %s", event.Status, EventStatusDraft)
+	}
+
+	// update status from
+	// EventStatusOnSale -> EventStatusOnSale
+	event.Status = EventStatusRunning
+
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		return ccErr("failed to serialize event: %v", err)
+	}
+
+	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
+		return ccErr("failed to updated  tate: %v", err)
+	}
+
+	return nil
+}
+
+// GetEvent returns the event information of the event with id "eventID".
+//
+// Params
+// * - eventID -> uuid format
+//
+// The return value can be:
+// * - error in case of the event is not found
 func (c *Contract) GetEvent(ctx common.ITickenTxContext, eventID string) (*Event, error) {
 	eventJSON, err := ctx.GetStub().GetState(eventID)
 	if err != nil {
@@ -214,13 +287,23 @@ func (c *Contract) GetEvent(ctx common.ITickenTxContext, eventID string) (*Event
 	return &event, nil
 }
 
+// SellTicket increase in one the ticket count on the
+// section with "sectionName" of the event with "eventID"
+// The event must be in the state "OnSale" in order to success
+//
+// Params
+// * - eventID -> uuid format
+// * - sectionName -> unique name that identifies the section in the event
+//
+// The return value can be:
+// * - error in case of the event is not found
 func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, sectionName string) error {
 	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
 		return err // this error is already formatted
 	}
 
-	if !event.OnSale {
+	if event.Status != EventStatusOnSale {
 		return ccErr("event not on sale")
 	}
 
