@@ -183,7 +183,7 @@ func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalT
 	return &newSection, nil
 }
 
-// StartSale sets the previously created event to be on status
+// Sell sets the previously created event to be on status
 // "on sale".  From this moment, we can start issuing tickets for
 // this event. In addition, this status blocks any modification or change
 // in the event, including adding sections
@@ -193,7 +193,7 @@ func (c *Contract) AddSection(ctx common.ITickenTxContext, eventID, name, totalT
 //
 // The return value can be:
 // * - error in case the event cant transition to state "on_sale"
-func (c *Contract) StartSale(ctx common.ITickenTxContext, eventID string) error {
+func (c *Contract) Sell(ctx common.ITickenTxContext, eventID string) error {
 	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
 		return err // this error is already formatted
@@ -223,8 +223,8 @@ func (c *Contract) StartSale(ctx common.ITickenTxContext, eventID string) error 
 	return nil
 }
 
-// StartEvent sets the previously created event to be on status
-// "running".  From this moment, is not possible to issue aditional
+// Start sets the previously created event to be on status
+// "running".  From this moment, is not possible to issue additional
 // tickets for the event and all tickets start to become available to
 // be scanned
 //
@@ -233,7 +233,7 @@ func (c *Contract) StartSale(ctx common.ITickenTxContext, eventID string) error 
 //
 // The return value can be:
 // * - error in case the event cant transition to state "running"
-func (c *Contract) StartEvent(ctx common.ITickenTxContext, eventID string) error {
+func (c *Contract) Start(ctx common.ITickenTxContext, eventID string) error {
 	event, err := c.GetEvent(ctx, eventID)
 	if err != nil {
 		return err // this error is already formatted
@@ -249,6 +249,46 @@ func (c *Contract) StartEvent(ctx common.ITickenTxContext, eventID string) error
 
 	// update status from
 	// EventStatusOnSale -> EventStatusOnSale
+	event.Status = EventStatusRunning
+
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		return ccErr("failed to serialize event: %v", err)
+	}
+
+	if err := ctx.GetStub().PutState(eventID, eventJSON); err != nil {
+		return ccErr("failed to updated  tate: %v", err)
+	}
+
+	return nil
+}
+
+// Finish sets the previously created event to be on status
+// "finished". Once in this state, all tickets will be invalidated
+// and they will be free to trade on public blockchain as collectibles,
+// or in other words, without any extra cost.
+//
+// Params
+// * - eventID -> uuid format
+//
+// The return value can be:
+// * - error in case the event cant transition to state "running"
+func (c *Contract) Finish(ctx common.ITickenTxContext, eventID string) error {
+	event, err := c.GetEvent(ctx, eventID)
+	if err != nil {
+		return err // this error is already formatted
+	}
+
+	if event.Status == EventStatusFinished {
+		return ccErr("event %s already is on status %s", event.EventID, EventStatusFinished)
+	}
+
+	if event.Status != EventStatusRunning {
+		return ccErr("event cant go from %s to %s", event.Status, EventStatusRunning)
+	}
+
+	// update status from
+	// EventStatusRunning -> EventStatusRunning
 	event.Status = EventStatusRunning
 
 	eventJSON, err := json.Marshal(event)
