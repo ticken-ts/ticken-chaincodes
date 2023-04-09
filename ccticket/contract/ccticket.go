@@ -14,8 +14,6 @@ type Contract struct {
 	contractapi.Contract
 }
 
-const Name = "cc-ticket"
-
 // ********** cc-event integration ********** //
 
 const ccEventName = "cc-event"
@@ -25,24 +23,37 @@ const ccEventSellTicketFunc = "SellTicket"
 
 const index = "eventID~section~ticketID"
 
+const Name = "cc-ticket"
+
 type Ticket struct {
 	TicketID string `json:"ticket_id"`
-	Status   Status `json:"status"`
 	EventID  string `json:"event_id"`
 	Section  string `json:"section"`
-	TokenID  string `json:"token_id"`
 
-	// represents the owner id in the
-	// web service database
+	// represents the public blockchain
+	// token ID
+	TokenID string `json:"token_id"`
+
+	// represents the owner id
+	// in the web service database
 	OwnerID string `json:"owner"`
 }
 
-type Status string
-
-const (
-	ISSUED Status = "issued"
-)
-
+// Issue a new ticket for the event with ID "eventID" in the section "section"
+// to the owner with ID "ownerID". This method will call the "cc-event" chaincode
+// to check if the event is "on sale" or the section has remaining tickets.
+//
+// Params
+// * - ticketID -> uuid format
+// * - eventID  -> uuid format
+// * - section  -> string (must be equal to the section name of the event)
+// * - ownerID  -> uuid format
+// * - tokenID  -> hexadecimal string representing the tokenID of the public blockchain (uint256)
+//
+// The return value can be:
+//   - - the ticket created serialized in JSON format
+//   - - error in case some conditions to issue the ticket are not fulfilled
+//     such as the event is not on sale or the section has not more remaining tickets
 func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section, ownerID, tokenID string) (*Ticket, error) {
 	existentTicket, err := c.GetTicket(ctx, ticketID)
 	if existentTicket != nil {
@@ -70,7 +81,6 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 		TicketID: ticketIDParsed.String(),
 		EventID:  eventIDParsed.String(),
 		Section:  section,
-		Status:   ISSUED,
 		TokenID:  tokenIDParsed.Text(16),
 		OwnerID:  ownerIDParsed.String(),
 	}
@@ -110,6 +120,13 @@ func (c *Contract) Issue(ctx common.ITickenTxContext, ticketID, eventID, section
 	return &ticket, nil
 }
 
+// GetTicket returns the ticket information of the event with id "ticketID".
+//
+// Params
+// * - ticketID -> uuid format
+//
+// The return value can be:
+// * - error in case of the ticket is not found
 func (c *Contract) GetTicket(ctx common.ITickenTxContext, ticketID string) (*Ticket, error) {
 	ticketJSON, err := ctx.GetStub().GetState(ticketID)
 	if err != nil {
@@ -127,6 +144,16 @@ func (c *Contract) GetTicket(ctx common.ITickenTxContext, ticketID string) (*Tic
 	return &ticket, err
 }
 
+// GetSectionTickets returns all the tickets of the section "section"
+// from the event with ID "eventID".
+//
+// Params
+// * - ticketID -> uuid format
+// * - section  -> string (must be equal to the section name of the event)
+//
+// The return value can be:
+// * - error in case of the event is not found or the section
+//   - is not present in the event
 func (c *Contract) GetSectionTickets(ctx common.ITickenTxContext, eventID, section string) ([]*Ticket, error) {
 	// Execute a key range query on all keys starting with 'section'
 	sectionTicketsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(index, []string{eventID, section})
