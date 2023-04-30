@@ -243,8 +243,8 @@ func (c *Contract) Start(ctx common.ITickenTxContext, eventID string) error {
 		return ccErr("event %s already is on status %s", event.EventID, EventStatusRunning)
 	}
 
-	if event.Status != EventStatusRunning {
-		return ccErr("event cant go from %s to %s", event.Status, EventStatusDraft)
+	if event.Status != EventStatusOnSale {
+		return ccErr("event cant go from %s to %s", event.Status, EventStatusOnSale)
 	}
 
 	// update status from

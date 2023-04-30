@@ -181,7 +181,7 @@ func getCCCallArgs(opName string, args ...string) [][]byte {
 	return queryArgs
 }
 
-// constructQueryResponseFromIterator constructs a slice of assets from the resultsIterato
+// constructQueryResponseFromIterator constructs a slice of assets from the resultsIterator
 func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) ([]*Ticket, error) {
 	var assets []*Ticket
 
