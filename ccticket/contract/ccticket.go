@@ -166,8 +166,8 @@ func (c *Contract) GetSectionTickets(ctx common.ITickenTxContext, eventID, secti
 }
 
 func ccErr(format string, args ...any) error {
-	msg := fmt.Sprintf(format, args)
-	return fmt.Errorf("[%s] | %v", Name, msg)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Errorf("[%s] | %s", Name, msg)
 }
 
 func getCCCallArgs(opName string, args ...string) [][]byte {

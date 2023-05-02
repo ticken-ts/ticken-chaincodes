@@ -244,7 +244,7 @@ func (c *Contract) Start(ctx common.ITickenTxContext, eventID string) error {
 	}
 
 	if event.Status != EventStatusOnSale {
-		return ccErr("event cant go from %s to %s", event.Status, EventStatusOnSale)
+		return ccErr("event cant go from %s to %s", event.Status, EventStatusRunning)
 	}
 
 	// update status from
@@ -377,6 +377,6 @@ func (c *Contract) SellTicket(ctx common.ITickenTxContext, eventID string, secti
 }
 
 func ccErr(format string, args ...any) error {
-	msg := fmt.Sprintf(format, args)
-	return fmt.Errorf("[%s] | %v", Name, msg)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Errorf("[%s] | %s", Name, msg)
 }
